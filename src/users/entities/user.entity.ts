@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm'
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  Unique,
+} from 'typeorm'
 import { Trainer } from '../../trainers/entities/trainer.entity'
 import { Student } from '../../students/entities/student.entity'
 
@@ -8,12 +14,22 @@ export class User {
   id: number
 
   @Column()
+  first_name: string
+
+  @Column()
+  last_name: string
+
+  @Column()
   username: string
 
   @Column()
   password: string
 
-  @Column()
+  @Column(
+    {
+      unique: true,
+    },
+  )
   email: string
 
   @Column()
