@@ -9,9 +9,12 @@ import { AuthModule } from './auth/auth.module'
 import { RoutinesModule } from './routines/routines.module'
 import { MealsModule } from './meals/meals.module'
 import { ExercisesModule } from './exercises/exercises.module'
-import { StudentsModule } from './students/students.module';
-import { TrainersModule } from './trainers/trainers.module';
+import { StudentsModule } from './students/students.module'
+import { TrainersModule } from './trainers/trainers.module'
 import typeormConfig from 'ormconfig'
+import { ResponseService } from './shared/response-format/response.service'
+import { APP_INTERCEPTOR } from '@nestjs/core'
+import { ResponseInterceptor } from './shared/interceptors/response.interceptor'
 
 @Module({
   imports: [
@@ -30,6 +33,13 @@ import typeormConfig from 'ormconfig'
     TrainersModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    ResponseService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+  ],
 })
 export class AppModule {}
