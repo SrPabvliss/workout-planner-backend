@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEmail, IsEnum, IsString } from 'class-validator'
-import { Unique } from 'typeorm'
 
 export class CreateUserDto {
   @ApiProperty({
@@ -48,12 +47,4 @@ export class CreateUserDto {
   @IsEmail()
   email: string
 
-  @ApiProperty({
-    description: 'The role of the user',
-    type: String,
-    required: true,
-    example: 'trainer',
-  })
-  @IsEnum(['trainer', 'student'])
-  role: 'trainer' | 'student'
 }

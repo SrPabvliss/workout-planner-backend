@@ -32,9 +32,6 @@ export class User {
   )
   email: string
 
-  @Column()
-  role: 'trainer' | 'student'
-
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date
 

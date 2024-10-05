@@ -11,5 +11,6 @@ import { ResponseService } from 'src/shared/response-format/response.service'
   imports: [TypeOrmModule.forFeature([Student, User, Trainer])],
   controllers: [UsersController],
   providers: [UsersService, ResponseService],
+  exports: [UsersService],
 })
 export class UsersModule {}

@@ -1,26 +1,108 @@
-import { Injectable } from '@nestjs/common';
-import { CreateTrainerDto } from './dto/create-trainer.dto';
-import { UpdateTrainerDto } from './dto/update-trainer.dto';
+import { Injectable } from '@nestjs/common'
+import { CreateTrainerDto } from './dto/create-trainer.dto'
+import { UpdateTrainerDto } from './dto/update-trainer.dto'
+import { UsersService } from 'src/users/users.service'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Trainer } from './entities/trainer.entity'
+import { Repository } from 'typeorm'
+import { ResponseService } from 'src/shared/response-format/response.service'
+import TRAINER_MESSAGES from './messages/trainer-messages'
 
 @Injectable()
 export class TrainersService {
-  create(createTrainerDto: CreateTrainerDto) {
-    return 'This action adds a new trainer';
+  constructor(
+    @InjectRepository(Trainer)
+    private readonly trainersRepository: Repository<Trainer>,
+    private readonly userService: UsersService,
+    private readonly responseService: ResponseService,
+  ) {}
+
+  async create(createTrainerDto: CreateTrainerDto) {
+    const { specialization, years_of_experience, ...rest } = createTrainerDto
+
+    const user = await this.userService.create({
+      ...rest,
+    })
+
+    if (!user) return
+
+    const trainer = this.trainersRepository.create({
+      user: user.data,
+      specialization,
+      years_of_experience,
+    })
+
+    return this.responseService.success(
+      await this.trainersRepository.save(trainer),
+      TRAINER_MESSAGES.CREATED,
+    )
   }
 
-  findAll() {
-    return `This action returns all trainers`;
+  async findAll() {
+    return this.responseService.success(
+      await this.trainersRepository.find({
+        relations: ['user'],
+      }),
+      TRAINER_MESSAGES.FOUND_MANY,
+    )
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} trainer`;
+  async findOne(id: number) {
+    const query = await this.trainersRepository
+      .createQueryBuilder('trainer')
+      .leftJoinAndSelect('trainer.user', 'user')
+      .where('trainer.id = :id', { id })
+      .getOne()
+
+    if (!query) return this.responseService.error(TRAINER_MESSAGES.NOT_FOUND)
+
+    return this.responseService.success(query, TRAINER_MESSAGES.FOUND)
   }
 
-  update(id: number, updateTrainerDto: UpdateTrainerDto) {
-    return `This action updates a #${id} trainer`;
+  async update(id: number, updateTrainerDto: UpdateTrainerDto) {
+    const trainer = await this.findOne(id)
+
+    if (!trainer) return this.responseService.error('Trainer not found.')
+
+    const { specialization, years_of_experience, ...rest } = updateTrainerDto
+
+    if (Object.keys(rest).length > 0) {
+      const userUpdateResult = await this.userService.update(
+        trainer.data.user.id,
+        rest,
+      )
+      if (!userUpdateResult) return
+    }
+
+    trainer.data.specialization = specialization ?? trainer.data.specialization
+    trainer.data.years_of_experience =
+      years_of_experience ?? trainer.data.years_of_experience
+
+    const updatedTrainer = await this.trainersRepository.save(trainer.data)
+
+    if (!updatedTrainer)
+      return this.responseService.error(TRAINER_MESSAGES.UPDATE_ERROR)
+
+    return this.responseService.success(
+      await this.findOne(id),
+      TRAINER_MESSAGES.UPDATED,
+    )
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} trainer`;
+  async remove(id: number) {
+    const trainer = await this.findOne(id)
+
+    if (!trainer) return
+
+    const deleted = await this.trainersRepository.delete(id)
+
+    if (!deleted)
+      return this.responseService.error(TRAINER_MESSAGES.DELETE_ERROR)
+
+    const userDeleted = await this.userService.remove(trainer.data.user.id)
+
+    if (!userDeleted) return
+
+    return this.responseService.success(trainer.data, TRAINER_MESSAGES.DELETED)
   }
 }
