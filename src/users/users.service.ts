@@ -67,7 +67,7 @@ export class UsersService {
   async remove(id: number) {
     const user = await this.findOne(id)
 
-    if (!user) return this.responseService.error(USER_MESSAGES.NOT_FOUND)
+    if (!user) return
 
     const deleted = await this.usersRepository.delete(id)
 
