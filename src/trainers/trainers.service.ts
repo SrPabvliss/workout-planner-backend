@@ -39,30 +39,32 @@ export class TrainersService {
   }
 
   async findAll() {
-    return this.responseService.success(
-      await this.trainersRepository.find({
-        relations: ['user'],
-      }),
-      TRAINER_MESSAGES.FOUND_MANY,
-    )
+
+    const trainers = await this.trainersRepository.find({
+      relations: ['user'],
+    })
+
+    if (!trainers) return this.responseService.error(TRAINER_MESSAGES.MANY_NOT_FOUND)
+
+    return this.responseService.success(trainers, TRAINER_MESSAGES.FOUND_MANY)
   }
 
   async findOne(id: number) {
-    const query = await this.trainersRepository
+    const trainer = await this.trainersRepository
       .createQueryBuilder('trainer')
       .leftJoinAndSelect('trainer.user', 'user')
       .where('trainer.id = :id', { id })
       .getOne()
 
-    if (!query) return this.responseService.error(TRAINER_MESSAGES.NOT_FOUND)
+    if (!trainer) return this.responseService.error(TRAINER_MESSAGES.NOT_FOUND)
 
-    return this.responseService.success(query, TRAINER_MESSAGES.FOUND)
+    return this.responseService.success(trainer, TRAINER_MESSAGES.FOUND)
   }
 
   async update(id: number, updateTrainerDto: UpdateTrainerDto) {
     const trainer = await this.findOne(id)
 
-    if (!trainer) return this.responseService.error('Trainer not found.')
+    if (!trainer) return
 
     const { specialization, years_of_experience, ...rest } = updateTrainerDto
 

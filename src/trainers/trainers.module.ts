@@ -11,7 +11,7 @@ import { ResponseService } from 'src/shared/response-format/response.service'
 @Module({
   controllers: [TrainersController],
   providers: [TrainersService, ResponseService, UsersService],
-  exports: [TrainersService],
   imports: [UsersModule, TypeOrmModule.forFeature([User, Trainer])],
+  exports: [TrainersService, UsersService, TypeOrmModule],
 })
 export class TrainersModule {}
