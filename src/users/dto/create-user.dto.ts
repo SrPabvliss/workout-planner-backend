@@ -30,15 +30,6 @@ export class CreateUserDto {
   username: string
 
   @ApiProperty({
-    description: 'The password of the user',
-    type: String,
-    required: true,
-    example: 'password123',
-  })
-  @IsString()
-  password: string
-
-  @ApiProperty({
     description: 'The email of the user',
     type: String,
     required: true,
@@ -46,5 +37,4 @@ export class CreateUserDto {
   })
   @IsEmail()
   email: string
-
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, Logger } from '@nestjs/common'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { ConfigModule } from '@nestjs/config'
@@ -15,6 +15,8 @@ import typeormConfig from 'ormconfig'
 import { ResponseService } from './shared/response-format/response.service'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor'
+import { JwtModule } from '@nestjs/jwt'
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -23,6 +25,10 @@ import { ResponseInterceptor } from './shared/interceptors/response.interceptor'
     }),
     TypeOrmModule.forRoot(typeormConfig),
     TypeOrmModule.forFeature([]),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
+    }),
     UsersModule,
     ExercisesModule,
     MealsModule,
@@ -31,6 +37,7 @@ import { ResponseInterceptor } from './shared/interceptors/response.interceptor'
     PresetsModule,
     StudentsModule,
     TrainersModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [
@@ -40,6 +47,7 @@ import { ResponseInterceptor } from './shared/interceptors/response.interceptor'
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
+    Logger,
   ],
 })
 export class AppModule {}

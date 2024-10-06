@@ -9,15 +9,23 @@ import { UsersService } from 'src/users/users.service'
 import { ResponseService } from 'src/shared/response-format/response.service'
 import { TrainersService } from 'src/trainers/trainers.service'
 import { TrainersModule } from 'src/trainers/trainers.module'
+import { EmailModule } from 'src/email/email.module'
+import { EmailService } from 'src/email/email.service'
 
 @Module({
   controllers: [StudentsController],
-  providers: [StudentsService, UsersService, ResponseService, TrainersService],
+  providers: [
+    StudentsService,
+    UsersService,
+    ResponseService,
+    TrainersService,
+  ],
   exports: [StudentsService],
   imports: [
     UsersModule,
     TypeOrmModule.forFeature([User, Student]),
     TrainersModule,
+    EmailModule,
   ],
 })
 export class StudentsModule {}
