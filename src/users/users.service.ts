@@ -35,6 +35,13 @@ export class UsersService {
 
     if (user) return this.responseService.error(USER_MESSAGES.ALREADY_EXISTS)
 
+    const usernameExists = await this.usersRepository.findOneBy({
+      username: createUserDto.username,
+    })
+
+    if (usernameExists)
+      return this.responseService.error(USER_MESSAGES.USERNAME_ALREADY_EXISTS)
+
     const randomPassword = await this.generateRandomPassword()
     const hashedPassword = await this.hashPassword(randomPassword)
 

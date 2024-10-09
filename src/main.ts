@@ -1,4 +1,4 @@
-import { HttpAdapterHost, NestFactory } from '@nestjs/core'
+import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { Logger, ValidationPipe } from '@nestjs/common'
@@ -24,6 +24,10 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('gym')
     .build()
+
+  const logger = new Logger('Config')
+  logger.log(`JWT_SECRET: ${process.env.JWT_SECRET}`)
+  logger.log(`JWT_EXPIRES_IN: ${process.env.JWT_EXPIRES_IN}`)
 
   const document = SwaggerModule.createDocument(app, config)
 

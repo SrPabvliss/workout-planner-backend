@@ -78,6 +78,19 @@ export class StudentsService {
     return this.responseService.success(student, STUDENT_MESSAGES.FOUND)
   }
 
+  async findOneByUserId(userId: number) {
+    const student = await this.studentsRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.user', 'user')
+      .leftJoinAndSelect('student.trainer', 'trainer')
+      .where('student.user.id = :userId', { userId })
+      .getOne()
+
+    if (!student) return this.responseService.error(STUDENT_MESSAGES.NOT_FOUND)
+
+    return this.responseService.success(student, STUDENT_MESSAGES.FOUND)
+  }
+
   async update(id: number, updateStudentDto: UpdateStudentDto) {
     const student = await this.findOne(id)
 

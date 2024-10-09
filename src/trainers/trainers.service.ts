@@ -39,12 +39,12 @@ export class TrainersService {
   }
 
   async findAll() {
-
     const trainers = await this.trainersRepository.find({
       relations: ['user'],
     })
 
-    if (!trainers) return this.responseService.error(TRAINER_MESSAGES.MANY_NOT_FOUND)
+    if (!trainers)
+      return this.responseService.error(TRAINER_MESSAGES.MANY_NOT_FOUND)
 
     return this.responseService.success(trainers, TRAINER_MESSAGES.FOUND_MANY)
   }
@@ -54,6 +54,18 @@ export class TrainersService {
       .createQueryBuilder('trainer')
       .leftJoinAndSelect('trainer.user', 'user')
       .where('trainer.id = :id', { id })
+      .getOne()
+
+    if (!trainer) return this.responseService.error(TRAINER_MESSAGES.NOT_FOUND)
+
+    return this.responseService.success(trainer, TRAINER_MESSAGES.FOUND)
+  }
+
+  async findOneByUserId(id: number) {
+    const trainer = await this.trainersRepository
+      .createQueryBuilder('trainer')
+      .leftJoinAndSelect('trainer.user', 'user')
+      .where('user.id = :id', { id })
       .getOne()
 
     if (!trainer) return this.responseService.error(TRAINER_MESSAGES.NOT_FOUND)

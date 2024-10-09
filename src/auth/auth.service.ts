@@ -5,6 +5,10 @@ import { UsersService } from 'src/users/users.service'
 import { TrainersService } from 'src/trainers/trainers.service'
 import { StudentsService } from 'src/students/students.service'
 import { CreateUserDto } from 'src/users/dto/create-user.dto'
+import { UpdateAuthDto } from './dto/update-password.dto'
+import { AuthDto } from './dto/auth.dto'
+import { ResponseService } from 'src/shared/response-format/response.service'
+import USER_MESSAGES from 'src/users/messages/user-messages'
 
 @Injectable()
 export class AuthService {
@@ -13,61 +17,63 @@ export class AuthService {
     private trainersService: TrainersService,
     private studentsService: StudentsService,
     private jwtService: JwtService,
+    private responseService: ResponseService,
   ) {}
 
-  async validateUser(username: string, password: string): Promise<any> {
+  async login({ username, password }: AuthDto) {
     const user = await this.usersService.findByUsername(username)
 
     if (!user) return
 
-    if (user.data && (await bcrypt.compare(password, user.data.password))) {
-      const { password, ...result } = user.data
-      return result
+    const areCredentialsValid = await bcrypt.compare(
+      password,
+      user.data.password,
+    )
+
+    if (!areCredentialsValid)
+      return this.responseService.error(USER_MESSAGES.INVALID_CREDENTIALS)
+
+    let role = ''
+    let trainer = false
+
+    try {
+      await this.trainersService.findOneByUserId(user.data.id)
+      role = 'trainer'
+      trainer = true
+    } catch (error) {
+      console.log(error)
+      role = ''
+      trainer = false
     }
-    return null
-  }
 
-  async login(username: string, password: string) {
-    const user = await this.usersService.findByUsername(username)
-
-    if (!user) return
-
-    if (user.data && (await bcrypt.compare(password, user.data.password))) {
-      const { password, ...result } = user.data
-      return result
-    }
-
-    const trainer = await this.trainersService.findOne(user.data.id)
-
-    let role = 'user'
-    if (trainer) {
-      role = 'trainer' as const
-      return {
-        access_token: this.jwtService.sign({ ...user.data, role }),
+    if (!trainer) {
+      console.log(trainer)
+      try {
+        console.log(user.data.id)
+        await this.studentsService.findOneByUserId(user.data.id)
+        console.log('student')
+        role = 'student'
+        console.log(role)
+      } catch (error) {
+        console.log(error)
+        role = ''
       }
     }
 
-    const student = await this.studentsService.findOne(user.data.id)
-    if (student) {
-      role = 'student' as const
-      return {
-        access_token: this.jwtService.sign({ ...user.data, role }),
-      }
-    }
+    const { password: _password, ...result } = user.data
 
-    return
+    return this.responseService.success(
+      {
+        access_token: this.jwtService.sign({ ...result, role }),
+      },
+      USER_MESSAGES.LOGIN_SUCCESS,
+    )
   }
 
-  async changePassword(
-    userId: number,
-    oldPassword: string,
-    newPassword: string,
+  async logout(
   ) {
-    const user = await this.usersService.findOne(userId)
-    if (user && (await bcrypt.compare(oldPassword, user.data.password))) {
-      user.data.password = await bcrypt.hash(newPassword, 10)
-      return this.usersService.update(userId, user.data)
-    }
-    return null
+    // this method should invalidate the token
   }
+
+  async changePassword({ username, password, newPassword }: UpdateAuthDto) {}
 }

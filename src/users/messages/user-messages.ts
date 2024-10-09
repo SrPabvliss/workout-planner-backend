@@ -10,6 +10,9 @@ enum USER_MESSAGES {
   NOT_FOUND = 'El usuario no ha sido encontrado',
   MANY_NOT_FOUND = 'No se encontraron usuarios',
   ALREADY_EXISTS = 'El usuario ya existe',
+  INVALID_CREDENTIALS = 'Credenciales inválidas',
+  LOGIN_SUCCESS = 'Bienvenido de vuelta',
+  USERNAME_ALREADY_EXISTS = 'Nombre de usuario no disponible',
 }
 
 export default USER_MESSAGES

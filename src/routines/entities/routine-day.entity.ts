@@ -8,6 +8,7 @@ import {
 } from 'typeorm'
 import { Routine } from './routine.entity'
 import { RoutineExercise } from './routine-excercise.entity'
+import { RoutineMeal } from './routine-meal.entity'
 
 @Entity('routine_day')
 export class RoutineDay {
@@ -36,4 +37,7 @@ export class RoutineDay {
 
   @OneToMany(() => RoutineExercise, (routineExcercise) => routineExcercise.id)
   exercises: RoutineExercise[]
+
+  @OneToMany(() => RoutineMeal, (routineMeal) => routineMeal.id)
+  meals: RoutineMeal[]
 }
