@@ -7,15 +7,16 @@ import { HttpExceptionFilter } from './shared/filters/all-exceptions.filter'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
+  app.enableCors()
+
   app.useLogger(app.get(Logger))
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  )
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  })
+
   app.useGlobalFilters(new HttpExceptionFilter())
 
   const config = new DocumentBuilder()
