@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEmail, IsEnum, IsString } from 'class-validator'
+import { IsEmail, IsEnum, IsOptional, IsString, IsUrl } from 'class-validator'
 
 export class CreateUserDto {
   @ApiProperty({
@@ -37,4 +37,14 @@ export class CreateUserDto {
   })
   @IsEmail()
   email: string
+
+  @ApiProperty({
+    description: 'The avatar url of the user',
+    type: String,
+    required: false,
+    example: 'https://api.dicebear.com/9.x/avataaars/svg?style=circle',
+  })
+  @IsOptional()
+  @IsUrl()
+  avatar_url?: string
 }

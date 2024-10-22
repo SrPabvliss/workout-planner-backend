@@ -80,6 +80,21 @@ export class StudentsController {
     return this.studentsService.update(id, updateStudentDto)
   }
 
+  @Get('user/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: 200,
+    description: 'The student has been successfully retrieved.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'The student with the given id does not exist.',
+  })
+  @ApiOperation({ summary: 'Get a student by user id' })
+  getByUserId(@Param('userId') userId: number) {
+    return this.studentsService.findOneByUserId(userId)
+  }
+
   @ApiOperation({ summary: 'Delete a student' })
   @ApiResponse({
     status: 200,

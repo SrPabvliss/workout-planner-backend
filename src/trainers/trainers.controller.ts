@@ -1,8 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, HttpCode } from '@nestjs/common';
-import { TrainersService } from './trainers.service';
-import { CreateTrainerDto } from './dto/create-trainer.dto';
-import { UpdateTrainerDto } from './dto/update-trainer.dto';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpStatus,
+  HttpCode,
+} from '@nestjs/common'
+import { TrainersService } from './trainers.service'
+import { CreateTrainerDto } from './dto/create-trainer.dto'
+import { UpdateTrainerDto } from './dto/update-trainer.dto'
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
 
 @Controller('trainers')
 export class TrainersController {
@@ -25,7 +35,7 @@ export class TrainersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createTrainerDto: CreateTrainerDto) {
-    return this.trainersService.create(createTrainerDto);
+    return this.trainersService.create(createTrainerDto)
   }
 
   @ApiOperation({ summary: 'Get all trainers' })
@@ -36,7 +46,7 @@ export class TrainersController {
   @Get()
   @HttpCode(HttpStatus.OK)
   findAll() {
-    return this.trainersService.findAll();
+    return this.trainersService.findAll()
   }
 
   @ApiOperation({ summary: 'Get a trainer by id' })
@@ -51,7 +61,22 @@ export class TrainersController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   findOne(@Param('id') id: string) {
-    return this.trainersService.findOne(+id);
+    return this.trainersService.findOne(+id)
+  }
+
+  @Get('/user/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: 200,
+    description: 'The trainer has been successfully retrieved.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'The trainer with the given id does not exist.',
+  })
+  @ApiOperation({ summary: 'Get a trainer by user id' })
+  getByUserId(@Param('userId') userId: number) {
+    return this.trainersService.findOneByUserId(userId)
   }
 
   @ApiOperation({ summary: 'Update a trainer' })
@@ -67,7 +92,7 @@ export class TrainersController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   update(@Param('id') id: string, @Body() updateTrainerDto: UpdateTrainerDto) {
-    return this.trainersService.update(+id, updateTrainerDto);
+    return this.trainersService.update(+id, updateTrainerDto)
   }
 
   @ApiOperation({ summary: 'Delete a trainer' })
@@ -82,6 +107,6 @@ export class TrainersController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string) {
-    return this.trainersService.remove(+id);
+    return this.trainersService.remove(+id)
   }
 }

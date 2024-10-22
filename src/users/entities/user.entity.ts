@@ -25,11 +25,9 @@ export class User {
   @Column()
   password: string
 
-  @Column(
-    {
-      unique: true,
-    },
-  )
+  @Column({
+    unique: true,
+  })
   email: string
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
@@ -42,9 +40,13 @@ export class User {
   })
   updated_at: Date
 
+  @Column()
+  avatar_url: string
+
   @OneToOne(() => Trainer, (trainer) => trainer.user)
   trainer: Trainer
 
   @OneToOne(() => Student, (student) => student.user)
   student: Student
 }
+

@@ -47,13 +47,10 @@ export class AuthService {
     }
 
     if (!trainer) {
-      console.log(trainer)
       try {
         console.log(user.data.id)
         await this.studentsService.findOneByUserId(user.data.id)
-        console.log('student')
         role = 'student'
-        console.log(role)
       } catch (error) {
         console.log(error)
         role = ''

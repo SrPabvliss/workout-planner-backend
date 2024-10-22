@@ -70,6 +70,7 @@ export class StudentsService {
       .createQueryBuilder('student')
       .leftJoinAndSelect('student.user', 'user')
       .leftJoinAndSelect('student.trainer', 'trainer')
+      .leftJoinAndSelect('trainer.user', 'trainerUser')
       .where('student.id = :id', { id })
       .getOne()
 
@@ -83,6 +84,7 @@ export class StudentsService {
       .createQueryBuilder('student')
       .leftJoinAndSelect('student.user', 'user')
       .leftJoinAndSelect('student.trainer', 'trainer')
+      .leftJoinAndSelect('trainer.user', 'trainerUser')
       .where('student.user.id = :userId', { userId })
       .getOne()
 
@@ -125,8 +127,12 @@ export class StudentsService {
     if (!updatedStudent)
       return this.responseService.error(STUDENT_MESSAGES.UPDATE_ERROR)
 
+    const refreshedStudent = await this.findOne(id)
+
+    if (!refreshedStudent) return
+
     return this.responseService.success(
-      await this.findOne(id),
+      refreshedStudent.data,
       STUDENT_MESSAGES.UPDATED,
     )
   }

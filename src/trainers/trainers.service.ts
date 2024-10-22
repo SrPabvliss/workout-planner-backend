@@ -75,32 +75,44 @@ export class TrainersService {
 
   async update(id: number, updateTrainerDto: UpdateTrainerDto) {
     const trainer = await this.findOne(id)
+    if (!trainer) return this.responseService.error(TRAINER_MESSAGES.NOT_FOUND)
 
-    if (!trainer) return
+    const { specialization, years_of_experience, ...userUpdateData } =
+      updateTrainerDto
 
-    const { specialization, years_of_experience, ...rest } = updateTrainerDto
+    try {
+      if (Object.keys(userUpdateData).length > 0) {
+        const userUpdateResult = await this.userService.update(
+          trainer.data.user.id,
+          userUpdateData,
+        )
 
-    if (Object.keys(rest).length > 0) {
-      const userUpdateResult = await this.userService.update(
-        trainer.data.user.id,
-        rest,
+        if (!userUpdateResult || !userUpdateResult.success) {
+          return userUpdateResult
+        }
+      }
+
+      const trainerData = {
+        id: trainer.data.id,
+        user: trainer.data.user,
+        specialization: specialization || trainer.data.specialization,
+        years_of_experience:
+          years_of_experience || trainer.data.years_of_experience,
+      }
+
+      const updatedTrainer = await this.trainersRepository.save(trainerData)
+
+      const refreshedTrainer = await this.findOne(id)
+
+      if (!refreshedTrainer) return
+
+      return this.responseService.success(
+        refreshedTrainer.data,
+        TRAINER_MESSAGES.UPDATED,
       )
-      if (!userUpdateResult) return
-    }
-
-    trainer.data.specialization = specialization ?? trainer.data.specialization
-    trainer.data.years_of_experience =
-      years_of_experience ?? trainer.data.years_of_experience
-
-    const updatedTrainer = await this.trainersRepository.save(trainer.data)
-
-    if (!updatedTrainer)
+    } catch (error) {
       return this.responseService.error(TRAINER_MESSAGES.UPDATE_ERROR)
-
-    return this.responseService.success(
-      await this.findOne(id),
-      TRAINER_MESSAGES.UPDATED,
-    )
+    }
   }
 
   async remove(id: number) {

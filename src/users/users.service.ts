@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { User } from './entities/user.entity'
-import { Repository } from 'typeorm'
+import { Not, Repository } from 'typeorm'
 import { ResponseService } from 'src/shared/response-format/response.service'
 import USER_MESSAGES from './messages/user-messages'
 import * as crypto from 'crypto'
@@ -47,6 +47,9 @@ export class UsersService {
 
     const newUser = this.usersRepository.create({
       ...createUserDto,
+      avatar_url: createUserDto.avatar_url
+        ? createUserDto.avatar_url
+        : 'https://api.dicebear.com/9.x/avataaars/svg?style=circle',
       password: hashedPassword,
     })
 
@@ -90,19 +93,47 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.findOne(id)
-
     if (!user) return this.responseService.error(USER_MESSAGES.NOT_FOUND)
 
-    return this.responseService.success(
-      await this.usersRepository.save({
-        ...user,
-        ...updateUserDto,
-        id,
-      }),
-      USER_MESSAGES.UPDATED,
-    )
-  }
+    // Verificaciones de duplicados
+    if (updateUserDto.username) {
+      const usernameExists = await this.usersRepository.findOneBy({
+        username: updateUserDto.username,
+        id: Not(id),
+      })
 
+      if (usernameExists)
+        return this.responseService.error(USER_MESSAGES.USERNAME_ALREADY_EXISTS)
+    }
+
+    if (updateUserDto.email) {
+      const emailExists = await this.usersRepository.findOneBy({
+        email: updateUserDto.email,
+        id: Not(id),
+      })
+
+      if (emailExists)
+        return this.responseService.error(USER_MESSAGES.EMAIL_ALREADY_EXISTS)
+    }
+
+    try {
+      // Importante: asegurarse de que el objeto user.data tenga todos los campos necesarios
+      const userData = {
+        id: user.data.id,
+        firstName: user.data.firstName,
+        lastName: user.data.lastName,
+        email: user.data.email,
+        username: user.data.username,
+        role: user.data.role,
+        ...updateUserDto, // Sobreescribimos con los nuevos valores
+      }
+
+      const updatedUser = await this.usersRepository.save(userData)
+      return this.responseService.success(updatedUser, USER_MESSAGES.UPDATED)
+    } catch (error) {
+      return this.responseService.error(USER_MESSAGES.UPDATE_ERROR)
+    }
+  }
   async remove(id: number) {
     const user = await this.findOne(id)
 

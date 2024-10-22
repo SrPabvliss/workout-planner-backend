@@ -13,6 +13,7 @@ enum USER_MESSAGES {
   INVALID_CREDENTIALS = 'Credenciales inválidas',
   LOGIN_SUCCESS = 'Bienvenido de vuelta',
   USERNAME_ALREADY_EXISTS = 'Nombre de usuario no disponible',
+  EMAIL_ALREADY_EXISTS = 'Email ya registrado',
 }
 
 export default USER_MESSAGES
