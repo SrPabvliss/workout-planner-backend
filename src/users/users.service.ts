@@ -49,7 +49,7 @@ export class UsersService {
       ...createUserDto,
       avatar_url: createUserDto.avatar_url
         ? createUserDto.avatar_url
-        : 'https://api.dicebear.com/9.x/avataaars/svg?style=circle',
+        : 'https://api.dicebear.com/9.x/avataaars/svg?accessories=kurt&eyes=default&facialHair=beardLight&hairColor=4a312c&skinColor=ae5d29&top=bigHair&clothing=blazerAndShirt&clothesColor=3c4f5c',
       password: hashedPassword,
     })
 
@@ -95,7 +95,6 @@ export class UsersService {
     const user = await this.findOne(id)
     if (!user) return this.responseService.error(USER_MESSAGES.NOT_FOUND)
 
-    // Verificaciones de duplicados
     if (updateUserDto.username) {
       const usernameExists = await this.usersRepository.findOneBy({
         username: updateUserDto.username,
@@ -117,23 +116,23 @@ export class UsersService {
     }
 
     try {
-      // Importante: asegurarse de que el objeto user.data tenga todos los campos necesarios
       const userData = {
         id: user.data.id,
-        firstName: user.data.firstName,
-        lastName: user.data.lastName,
+        first_name: user.data.first_name,
+        last_name: user.data.last_name,
         email: user.data.email,
         username: user.data.username,
-        role: user.data.role,
-        ...updateUserDto, // Sobreescribimos con los nuevos valores
+        ...updateUserDto,
       }
 
       const updatedUser = await this.usersRepository.save(userData)
+
       return this.responseService.success(updatedUser, USER_MESSAGES.UPDATED)
     } catch (error) {
       return this.responseService.error(USER_MESSAGES.UPDATE_ERROR)
     }
   }
+
   async remove(id: number) {
     const user = await this.findOne(id)
 
