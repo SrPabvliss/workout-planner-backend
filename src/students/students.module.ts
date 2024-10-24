@@ -10,7 +10,6 @@ import { ResponseService } from 'src/shared/response-format/response.service'
 import { TrainersService } from 'src/trainers/trainers.service'
 import { TrainersModule } from 'src/trainers/trainers.module'
 import { EmailModule } from 'src/email/email.module'
-import { EmailService } from 'src/email/email.service'
 
 @Module({
   controllers: [StudentsController],

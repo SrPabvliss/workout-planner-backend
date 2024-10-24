@@ -95,6 +95,21 @@ export class StudentsController {
     return this.studentsService.findOneByUserId(userId)
   }
 
+  @ApiOperation({ summary: 'Get all students by trainer id' })
+  @ApiResponse({
+    status: 200,
+    description: 'The students have been successfully retrieved.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'The student with the given id does not exist.',
+  })
+  @Get('trainer/:trainerId')
+  @HttpCode(HttpStatus.OK)
+  getAllByTrainerId(@Param('trainerId') trainerId: number) {
+    return this.studentsService.findAllByTrainerId(trainerId)
+  }
+
   @ApiOperation({ summary: 'Delete a student' })
   @ApiResponse({
     status: 200,

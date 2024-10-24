@@ -10,8 +10,8 @@ import {
 } from 'typeorm'
 import { User } from '../../users/entities/user.entity'
 import { RoutineDay } from './routine-day.entity'
-import { Student } from 'src/students/entities/student.entity'
-import { Trainer } from 'src/trainers/entities/trainer.entity'
+import { Student } from '../../students/entities/student.entity'
+import { Trainer } from '../../trainers/entities/trainer.entity'
 
 @Entity('routine')
 export class Routine {

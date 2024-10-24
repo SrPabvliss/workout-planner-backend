@@ -5,7 +5,7 @@ import {
   JoinColumn,
   Column,
 } from 'typeorm'
-import { Exercise } from 'src/exercises/entities/exercise.entity'
+import { Exercise } from '../../exercises/entities/exercise.entity'
 import { RoutineDay } from './routine-day.entity'
 
 @Entity('routine_exercise')

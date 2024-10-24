@@ -16,12 +16,13 @@ import { ResponseService } from './shared/response-format/response.service'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor'
 import { JwtModule } from '@nestjs/jwt'
-import { EmailModule } from './email/email.module';
+import { EmailModule } from './email/email.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRoot(typeormConfig),
     TypeOrmModule.forFeature([]),

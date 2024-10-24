@@ -55,9 +55,13 @@ export class StudentsService {
   }
 
   async findAll() {
-    const students = await this.studentsRepository.find({
-      relations: ['user', 'trainer'],
-    })
+    const students = await this.studentsRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.user', 'user')
+      .leftJoinAndSelect('student.trainer', 'trainer')
+      .leftJoinAndSelect('trainer.user', 'trainerUser')
+      .where('student.trainer IS NOT NULL')
+      .getMany()
 
     if (!students)
       return this.responseService.error(STUDENT_MESSAGES.MANY_NOT_FOUND)
@@ -91,6 +95,21 @@ export class StudentsService {
     if (!student) return this.responseService.error(STUDENT_MESSAGES.NOT_FOUND)
 
     return this.responseService.success(student, STUDENT_MESSAGES.FOUND)
+  }
+
+  async findAllByTrainerId(trainerId: number) {
+    const students = await this.studentsRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.user', 'user')
+      .leftJoinAndSelect('student.trainer', 'trainer')
+      .leftJoinAndSelect('trainer.user', 'trainerUser')
+      .where('student.trainer.id = :trainerId', { trainerId })
+      .getMany()
+
+    if (!students)
+      return this.responseService.error(STUDENT_MESSAGES.MANY_NOT_FOUND)
+
+    return this.responseService.success(students, STUDENT_MESSAGES.FOUND_MANY)
   }
 
   async update(id: number, updateStudentDto: UpdateStudentDto) {

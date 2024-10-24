@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm'
-import { Meal } from 'src/meals/entities/meal.entity'
+import { Meal } from '../../meals/entities/meal.entity'
 import { RoutineDay } from './routine-day.entity'
 
 @Entity('routine_meal')

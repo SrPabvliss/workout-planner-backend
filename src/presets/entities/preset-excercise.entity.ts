@@ -6,7 +6,7 @@ import {
   Column,
 } from 'typeorm'
 import { PresetDay } from './preset-day.entity'
-import { Exercise } from 'src/exercises/entities/exercise.entity'
+import { Exercise } from '../../exercises/entities/exercise.entity'
 
 @Entity('preset_exercise')
 export class PresetExercise {

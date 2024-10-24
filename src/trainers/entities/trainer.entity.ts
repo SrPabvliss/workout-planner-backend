@@ -8,7 +8,7 @@ import {
 } from 'typeorm'
 import { User } from '../../users/entities/user.entity'
 import { Student } from '../../students/entities/student.entity'
-import { Routine } from 'src/routines/entities/routine.entity'
+import { Routine } from '../../routines/entities/routine.entity'
 
 @Entity()
 export class Trainer {
