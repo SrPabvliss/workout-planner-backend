@@ -48,7 +48,7 @@ export class CategoryService {
 
     const newCategory = this.categoryRepository.create({
       ...createCategoryDto,
-      name: normalizeString(createCategoryDto.name), // Normalizar al crear
+      name: normalizeString(createCategoryDto.name),
     })
 
     try {
@@ -80,7 +80,6 @@ export class CategoryService {
         return this.responseService.error(CATEGORY_MESSAGES.ALREADY_EXISTS)
       }
 
-      // Normalizar el nombre al actualizar
       updateCategoryDto.name = normalizeString(updateCategoryDto.name)
     }
 
