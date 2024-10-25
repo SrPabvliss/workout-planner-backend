@@ -1,6 +1,19 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { MealCategory } from 'src/category/entities/meal-category.entity'
+import { Category } from '../../category/entities/category.entity'
+import { User } from '../../users/entities/user.entity'
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm'
 
-@Entity()
+@Entity('meals')
 export class Meal {
   @PrimaryGeneratedColumn()
   id: number
@@ -8,32 +21,27 @@ export class Meal {
   @Column()
   name: string
 
-  @Column()
+  @Column('text')
   description: string
 
-  @Column()
+  @Column('text')
   nutritional_info: string
 
-  @Column()
+  @Column('text')
   ingredients: string
 
-  @Column()
+  @Column('text')
   preparation: string
 
-  @Column()
-  created_by: number
+  @ManyToOne(() => User)
+  created_by: User
 
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @OneToMany(() => MealCategory, (mc) => mc.meal)
+  mealCategories: MealCategory[]
+
+  @CreateDateColumn()
   created_at: Date
 
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn()
   updated_at: Date
 }

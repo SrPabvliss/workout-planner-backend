@@ -17,6 +17,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core'
 import { ResponseInterceptor } from './shared/interceptors/response.interceptor'
 import { JwtModule } from '@nestjs/jwt'
 import { EmailModule } from './email/email.module'
+import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { EmailModule } from './email/email.module'
     StudentsModule,
     TrainersModule,
     EmailModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [

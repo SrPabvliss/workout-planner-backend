@@ -4,10 +4,17 @@ import {
   Column,
   ManyToOne,
   OneToMany,
+  ManyToMany,
+  JoinTable,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm'
-import { Trainer } from '../../trainers/entities/trainer.entity'
+import { User } from '../../users/entities/user.entity'
+import { Category } from '../../category/entities/category.entity'
+import { ExerciseImage } from './exercises-images.entity'
+import { ExerciseCategory } from 'src/category/entities/exercise-category.entity'
 
-@Entity()
+@Entity('exercises')
 export class Exercise {
   @PrimaryGeneratedColumn()
   id: number
@@ -15,22 +22,27 @@ export class Exercise {
   @Column()
   name: string
 
+  @Column()
+  normalized_name: string
+
   @Column('text')
   description: string
 
-  @Column()
-  youtube_link: string
+  @Column({ nullable: true })
+  youtube_url: string
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @ManyToOne(() => User)
+  created_by: User
+
+  @OneToMany(() => ExerciseImage, (image) => image.exercise)
+  images: ExerciseImage[]
+
+  @OneToMany(() => ExerciseCategory, (ec) => ec.exercise)
+  exerciseCategories: ExerciseCategory[]
+
+  @CreateDateColumn()
   created_at: Date
 
-  @Column()
-  created_by: number
-
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn()
   updated_at: Date
 }

@@ -12,8 +12,9 @@ import {
 import { TrainersService } from './trainers.service'
 import { CreateTrainerDto } from './dto/create-trainer.dto'
 import { UpdateTrainerDto } from './dto/update-trainer.dto'
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 
+@ApiTags('trainers')
 @Controller('trainers')
 export class TrainersController {
   constructor(private readonly trainersService: TrainersService) {}
