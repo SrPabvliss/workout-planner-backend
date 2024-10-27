@@ -34,8 +34,11 @@ export class Student {
   @Column()
   trained_before: boolean
 
-  @Column()
-  medical_conditions: string
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  medical_conditions?: string
 
   @OneToMany(() => Routine, (routine) => routine.id)
   routines: Routine[]

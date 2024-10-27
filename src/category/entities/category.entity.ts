@@ -30,6 +30,9 @@ export class Category {
   })
   type: CategoryType
 
+  @Column({ type: 'text', nullable: true })
+  color?: string
+
   @OneToMany(() => ExerciseCategory, (ec) => ec.category)
   exerciseCategories: ExerciseCategory[]
 

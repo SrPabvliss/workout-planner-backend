@@ -34,4 +34,14 @@ export class CreateCategoryDto {
   @IsNotEmpty()
   @IsEnum(CategoryType)
   type: CategoryType
+
+  @ApiProperty({
+    description: 'El color de la categoría',
+    type: String,
+    required: false,
+    example: '#FF0000',
+  })
+  @IsOptional()
+  @IsString()
+  color?: string
 }

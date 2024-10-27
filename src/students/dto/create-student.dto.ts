@@ -1,9 +1,8 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsNumber, IsString } from "class-validator";
-import { CreateUserDto } from "src/users/dto/create-user.dto";
+import { ApiProperty } from '@nestjs/swagger'
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator'
+import { CreateUserDto } from 'src/users/dto/create-user.dto'
 
 export class CreateStudentDto extends CreateUserDto {
-
   @ApiProperty({
     description: 'The trainer of the student',
     type: Number,
@@ -47,5 +46,6 @@ export class CreateStudentDto extends CreateUserDto {
     example: 'Diabetes',
   })
   @IsString()
-  medical_conditions: string
+  @IsOptional()
+  medical_conditions?: string
 }
