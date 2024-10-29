@@ -21,6 +21,11 @@ export class Category {
   @Column()
   name: string
 
+  @Column({
+    nullable: true,
+  })
+  normalizaed_name: string
+
   @Column({ type: 'text', nullable: true })
   description: string
 
