@@ -26,7 +26,7 @@ export class CategoryService {
 
     const query = this.categoryRepository
       .createQueryBuilder('category')
-      .where('LOWER(category.name) = LOWER(:name)', { name: normalizedName })
+      .where('category.normalizaed_name = :normalizedName', { normalizedName })
       .andWhere('category.type = :type', { type })
 
     if (excludeId) {
@@ -48,7 +48,7 @@ export class CategoryService {
 
     const newCategory = this.categoryRepository.create({
       ...createCategoryDto,
-      name: normalizeString(createCategoryDto.name),
+      normalizaed_name: normalizeString(createCategoryDto.name),
     })
 
     try {
@@ -79,14 +79,15 @@ export class CategoryService {
       if (existingCategory) {
         return this.responseService.error(CATEGORY_MESSAGES.ALREADY_EXISTS)
       }
-
-      updateCategoryDto.name = normalizeString(updateCategoryDto.name)
     }
 
     try {
       const categoryData = {
         ...category.data,
         ...updateCategoryDto,
+        ...(updateCategoryDto.name && {
+          normalizaed_name: normalizeString(updateCategoryDto.name),
+        }),
       }
 
       const updatedCategory = await this.categoryRepository.save(categoryData)
@@ -100,6 +101,7 @@ export class CategoryService {
       return this.responseService.error(CATEGORY_MESSAGES.UPDATE_ERROR)
     }
   }
+
 
   async findAll() {
     const categories = await this.categoryRepository.find({

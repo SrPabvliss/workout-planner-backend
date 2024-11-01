@@ -21,6 +21,11 @@ export class Category {
   @Column()
   name: string
 
+  @Column({
+    nullable: true,
+  })
+  normalizaed_name: string
+
   @Column({ type: 'text', nullable: true })
   description: string
 
@@ -29,6 +34,9 @@ export class Category {
     enum: CategoryType,
   })
   type: CategoryType
+
+  @Column({ type: 'text', nullable: true })
+  color?: string
 
   @OneToMany(() => ExerciseCategory, (ec) => ec.category)
   exerciseCategories: ExerciseCategory[]

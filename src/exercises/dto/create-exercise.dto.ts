@@ -6,9 +6,7 @@ import {
   IsOptional,
   IsArray,
   IsNumber,
-  ValidateNested,
 } from 'class-validator'
-import { CreateExerciseImageDto } from './create-exercise-image.dto'
 import { Type } from 'class-transformer'
 
 export class CreateExerciseDto {
@@ -42,16 +40,22 @@ export class CreateExerciseDto {
     type: [Number],
     example: [1, 2],
   })
-  @IsArray()
-  @IsNumber({}, { each: true })
   categories: number[]
 
   @ApiProperty({
-    description: 'Imágenes del ejercicio',
-    type: [CreateExerciseImageDto],
+    description: 'Índices de las imágenes principales',
+    type: [Number],
+    required: false,
   })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateExerciseImageDto)
-  images: CreateExerciseImageDto[]
+  @IsOptional()
+  mainImageIndexes?: number[]
+
+  @ApiProperty({
+    type: 'array',
+    items: {
+      type: 'string',
+      format: 'binary',
+    },
+  })
+  images?: Express.Multer.File[]
 }

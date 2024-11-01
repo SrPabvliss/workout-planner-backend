@@ -9,8 +9,10 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
-  Req,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common'
+import { FilesInterceptor } from '@nestjs/platform-express'
 import { ExercisesService } from '../services/exercises.service'
 import { CreateExerciseDto } from '../dto/create-exercise.dto'
 import { UpdateExerciseDto } from '../dto/update-exercise.dto'
@@ -20,6 +22,7 @@ import {
   ApiResponse,
   ApiTags,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger'
 
 @ApiTags('exercises')
@@ -28,43 +31,22 @@ import {
 export class ExercisesController {
   constructor(private readonly exercisesService: ExercisesService) {}
 
-  @ApiOperation({ summary: 'Crear un ejercicio' })
-  @ApiResponse({
-    status: 201,
-    description: 'El ejercicio ha sido creado exitosamente.',
-  })
-  @ApiBody({ type: CreateExerciseDto })
   @Post()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('images', 10))
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createExerciseDto: CreateExerciseDto) {
-    // Por ahora pasamos un ID fijo como creador
-    return await this.exercisesService.create(createExerciseDto, 1) // ID 1 como ejemplo
-  }
+  async create(
+    @Body() createExerciseDto: any,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    const parsedDto = {
+      ...createExerciseDto,
+      categories: JSON.parse(createExerciseDto.categories || '[]'),
+      mainImageIndexes: JSON.parse(createExerciseDto.mainImageIndexes || '[]'),
+      images: files,
+    }
 
-  @ApiOperation({ summary: 'Obtener todos los ejercicios' })
-  @ApiResponse({
-    status: 200,
-    description: 'Los ejercicios han sido recuperados exitosamente.',
-  })
-  @Get()
-  @HttpCode(HttpStatus.OK)
-  async findAll() {
-    return await this.exercisesService.findAll()
-  }
-
-  @ApiOperation({ summary: 'Obtener un ejercicio por id' })
-  @ApiResponse({
-    status: 200,
-    description: 'El ejercicio ha sido recuperado exitosamente.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'El ejercicio con el id proporcionado no existe.',
-  })
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return await this.exercisesService.findOne(id)
+    return await this.exercisesService.create(parsedDto, 1)
   }
 
   @ApiOperation({ summary: 'Actualizar un ejercicio' })
@@ -72,29 +54,68 @@ export class ExercisesController {
     status: 200,
     description: 'El ejercicio ha sido actualizado exitosamente.',
   })
-  @ApiResponse({
-    status: 404,
-    description: 'El ejercicio con el id proporcionado no existe.',
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        description: { type: 'string' },
+        youtube_url: { type: 'string' },
+        categories: {
+          type: 'array',
+          items: { type: 'number' },
+        },
+        images: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+        mainImageIndexes: {
+          type: 'array',
+          items: { type: 'number' },
+        },
+      },
+    },
   })
-  @ApiBody({ type: UpdateExerciseDto })
   @Patch(':id')
+  @UseInterceptors(FilesInterceptor('images', 10))
   @HttpCode(HttpStatus.OK)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateExerciseDto: UpdateExerciseDto,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return await this.exercisesService.update(id, updateExerciseDto)
+    const categories = updateExerciseDto.categories
+      ? JSON.parse(updateExerciseDto.categories as unknown as string)
+      : undefined
+
+    const mainImageIndexes = updateExerciseDto.mainImageIndexes
+      ? JSON.parse(updateExerciseDto.mainImageIndexes as unknown as string)
+      : []
+
+    return await this.exercisesService.update(id, {
+      ...updateExerciseDto,
+      categories,
+      mainImageIndexes,
+      images: files,
+    })
   }
 
-  @ApiOperation({ summary: 'Eliminar un ejercicio' })
-  @ApiResponse({
-    status: 200,
-    description: 'El ejercicio ha sido eliminado exitosamente.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'El ejercicio con el id proporcionado no existe.',
-  })
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  async findAll() {
+    return await this.exercisesService.findAll()
+  }
+
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return await this.exercisesService.findOne(id)
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id', ParseIntPipe) id: number) {

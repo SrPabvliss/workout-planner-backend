@@ -10,6 +10,7 @@ import { normalizeString } from 'src/shared/utils/string-utils'
 import { ExerciseImagesService } from './exercises-images.service'
 import EXERCISE_MESSAGES from '../messages/exercise-messages'
 import { Category } from 'src/category/entities/category.entity'
+import { CreateExerciseImageDto } from '../dto/create-exercise-image.dto'
 
 @Injectable()
 export class ExercisesService {
@@ -89,7 +90,12 @@ export class ExercisesService {
   }
 
   async create(createExerciseDto: CreateExerciseDto, userId: number = 1) {
-    const { images, categories, ...exerciseData } = createExerciseDto
+    const {
+      images,
+      categories,
+    mainImageIndexes = [],
+      ...exerciseData
+    } = createExerciseDto
 
     const existingExercise = await this.checkExerciseExists(exerciseData.name)
     if (existingExercise) {
@@ -123,7 +129,12 @@ export class ExercisesService {
       }
 
       if (images && images.length > 0) {
-        await this.exerciseImagesService.createMany(images, savedExercise.id)
+        const imageData = images.map((file, index) => ({
+          file,
+          is_main: mainImageIndexes.includes(index),
+        }))
+
+        await this.exerciseImagesService.createMany(imageData, savedExercise.id)
       }
 
       const completeExercise = await this.getExerciseWithRelations(
@@ -146,7 +157,12 @@ export class ExercisesService {
       return this.responseService.error(EXERCISE_MESSAGES.NOT_FOUND)
     }
 
-    const { images, categories, ...exerciseData } = updateExerciseDto
+    const {
+      images,
+      categories,
+      mainImageIndexes = [],
+      ...exerciseData
+    } = updateExerciseDto
 
     const updatedFields: Partial<Exercise> = { ...exerciseData }
 
@@ -179,7 +195,12 @@ export class ExercisesService {
       }
 
       if (images && images.length > 0) {
-        await this.exerciseImagesService.createMany(images, id)
+        const imageData = images.map((file, index) => ({
+          file,
+          is_main: mainImageIndexes.includes(index),
+        }))
+
+        await this.exerciseImagesService.createMany(imageData, id)
       }
 
       const completeExercise = await this.getExerciseWithRelations(id)
