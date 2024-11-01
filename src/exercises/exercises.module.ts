@@ -10,6 +10,7 @@ import { ExerciseImagesController } from './controllers/exercises-images.control
 import { ExerciseImagesService } from './services/exercises-images.service'
 import { ExerciseCategory } from 'src/category/entities/exercise-category.entity'
 import { Category } from 'src/category/entities/category.entity'
+import { CloudinaryModule } from 'src/shared/cloudinary/cloudinary.module'
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { Category } from 'src/category/entities/category.entity'
       Category,
     ]),
     CategoryModule,
+    CloudinaryModule,
   ],
   controllers: [ExercisesController, ExerciseImagesController],
   providers: [ExercisesService, ExerciseImagesService, ResponseService],
