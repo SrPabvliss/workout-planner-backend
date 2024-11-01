@@ -19,6 +19,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { EmailModule } from './email/email.module'
 import { CategoryModule } from './category/category.module';
 import { CloudinaryModule } from './shared/cloudinary/cloudinary.module';
+import { IngredientsModule } from './ingredients/ingredients.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { CloudinaryModule } from './shared/cloudinary/cloudinary.module';
     EmailModule,
     CategoryModule,
     CloudinaryModule,
+    IngredientsModule,
   ],
   controllers: [AppController],
   providers: [

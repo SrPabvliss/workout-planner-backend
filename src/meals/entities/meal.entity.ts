@@ -1,17 +1,15 @@
-import { MealCategory } from 'src/category/entities/meal-category.entity'
-import { Category } from '../../category/entities/category.entity'
-import { User } from '../../users/entities/user.entity'
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  ManyToMany,
-  JoinTable,
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm'
+import { User } from '../../users/entities/user.entity'
+import { MealCategory } from '../../category/entities/meal-category.entity'
+import { MealIngredient } from './meal-ingredient.entity'
 
 @Entity('meals')
 export class Meal {
@@ -25,16 +23,15 @@ export class Meal {
   description: string
 
   @Column('text')
-  nutritional_info: string
-
-  @Column('text')
-  ingredients: string
-
-  @Column('text')
   preparation: string
 
   @ManyToOne(() => User)
   created_by: User
+
+  @OneToMany(() => MealIngredient, (mi) => mi.meal, {
+    cascade: true,
+  })
+  mealIngredients: MealIngredient[]
 
   @OneToMany(() => MealCategory, (mc) => mc.meal)
   mealCategories: MealCategory[]
