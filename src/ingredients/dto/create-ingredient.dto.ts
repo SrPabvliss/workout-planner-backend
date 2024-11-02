@@ -1,4 +1,9 @@
-import { IsString, IsNotEmpty, ValidateNested } from 'class-validator'
+import {
+  IsString,
+  IsNotEmpty,
+  ValidateNested,
+  IsBoolean,
+} from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { CreateNutritionalInfoDto } from './create-nutritional-info.dto'
@@ -12,5 +17,9 @@ export class CreateIngredientDto {
   @ApiProperty({ description: 'Nutritional information' })
   @ValidateNested()
   @Type(() => CreateNutritionalInfoDto)
-  nutritionalInfo: CreateNutritionalInfoDto
+  nutritional_info: CreateNutritionalInfoDto
+
+  @ApiProperty({ description: 'Active state of the ingredient' })
+  @IsBoolean()
+  is_active: boolean
 }

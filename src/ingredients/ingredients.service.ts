@@ -1,26 +1,149 @@
-import { Injectable } from '@nestjs/common';
-import { CreateIngredientDto } from './dto/create-ingredient.dto';
-import { UpdateIngredientDto } from './dto/update-ingredient.dto';
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Not, Repository } from 'typeorm'
+import { Ingredient } from './entities/ingredient.entity'
+import { NutritionalInfo } from './entities/nutritional-info.entity'
+import { CreateIngredientDto } from './dto/create-ingredient.dto'
+import { UpdateIngredientDto } from './dto/update-ingredient.dto'
+import { ResponseService } from '../shared/response-format/response.service'
+import INGREDIENT_MESSAGES from './messages/ingredient-messages'
 
 @Injectable()
 export class IngredientsService {
-  create(createIngredientDto: CreateIngredientDto) {
-    return 'This action adds a new ingredient';
+  constructor(
+    @InjectRepository(Ingredient)
+    private readonly ingredientsRepository: Repository<Ingredient>,
+    @InjectRepository(NutritionalInfo)
+    private readonly nutritionalInfoRepository: Repository<NutritionalInfo>,
+    private readonly responseService: ResponseService,
+  ) {}
+
+  async create(createIngredientDto: CreateIngredientDto) {
+    const normalized_name = createIngredientDto.name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '')
+      .trim()
+
+    const existing = await this.ingredientsRepository.findOne({
+      where: { normalized_name },
+    })
+
+    if (existing) {
+      return this.responseService.error(INGREDIENT_MESSAGES.ALREADY_EXISTS)
+    }
+
+    const ingredient = this.ingredientsRepository.create({
+      name: createIngredientDto.name,
+      normalized_name,
+    })
+
+    const savedIngredient = await this.ingredientsRepository.save(ingredient)
+
+    const nutritionalInfo = this.nutritionalInfoRepository.create({
+      ...createIngredientDto.nutritional_info,
+      ingredient: savedIngredient,
+    })
+
+    await this.nutritionalInfoRepository.save(nutritionalInfo)
+
+    const saved = await this.findOne(savedIngredient.id)
+
+    if (!saved) return
+
+    return this.responseService.success(saved.data, INGREDIENT_MESSAGES.CREATED)
   }
 
-  findAll() {
-    return `This action returns all ingredients`;
+  async findAll() {
+    const ingredients = await this.ingredientsRepository.find({
+      where: { is_active: true },
+      relations: ['nutritionalInfo'],
+    })
+
+    if (!ingredients?.length) {
+      return this.responseService.error(INGREDIENT_MESSAGES.MANY_NOT_FOUND)
+    }
+
+    return this.responseService.success(
+      ingredients.map((ingredient) => ({
+        ...ingredient,
+        nutritional_info: ingredient.nutritionalInfo,
+      })),
+      INGREDIENT_MESSAGES.FOUND_MANY,
+    )
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} ingredient`;
+  async findOne(id: number) {
+    const ingredient = await this.ingredientsRepository.findOne({
+      where: { id, is_active: true },
+      relations: ['nutritionalInfo'],
+    })
+
+    if (!ingredient) {
+      return this.responseService.error(INGREDIENT_MESSAGES.NOT_FOUND)
+    }
+
+    return this.responseService.success(
+      {
+        ...ingredient,
+        nutritional_info: ingredient.nutritionalInfo,
+      },
+      INGREDIENT_MESSAGES.FOUND,
+    )
   }
 
-  update(id: number, updateIngredientDto: UpdateIngredientDto) {
-    return `This action updates a #${id} ingredient`;
+  async update(id: number, updateIngredientDto: UpdateIngredientDto) {
+    const ingredient = await this.findOne(id)
+
+    if (!ingredient) return
+
+    if (updateIngredientDto.name) {
+      const normalized_name = updateIngredientDto.name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '')
+        .trim()
+
+      const existing = await this.ingredientsRepository.findOne({
+        where: { normalized_name, id: Not(id) },
+      })
+
+      if (existing) {
+        return this.responseService.error(INGREDIENT_MESSAGES.ALREADY_EXISTS)
+      }
+
+      ingredient.data.name = updateIngredientDto.name
+      ingredient.data.normalized_name = normalized_name
+    }
+
+    if (updateIngredientDto.nutritional_info) {
+      await this.nutritionalInfoRepository.update(
+        ingredient.data.nutritionalInfo.id,
+        updateIngredientDto.nutritional_info,
+      )
+    }
+
+    const updated = await this.ingredientsRepository.save(ingredient.data)
+
+    const saved = await this.findOne(updated.id)
+
+    if (!saved) return
+    return this.responseService.success(saved.data, INGREDIENT_MESSAGES.UPDATED)
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} ingredient`;
+  async remove(id: number) {
+    const ingredient = await this.findOne(id)
+
+    if (!ingredient) return
+
+    ingredient.data.is_active = false
+    await this.ingredientsRepository.save(ingredient.data)
+
+    return this.responseService.success(
+      { ...ingredient.data, nutritional_info: ingredient.data.nutritionalInfo },
+      INGREDIENT_MESSAGES.DELETED,
+    )
   }
 }
