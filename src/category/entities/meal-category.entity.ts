@@ -10,7 +10,7 @@ export class MealCategory {
   @PrimaryColumn()
   category_id: number
 
-  @ManyToOne(() => Meal, (meal) => meal.mealCategories)
+  @ManyToOne(() => Meal, (meal) => meal.meal_categories)
   @JoinColumn({ name: 'meal_id' })
   meal: Meal
 
