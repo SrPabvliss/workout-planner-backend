@@ -39,7 +39,7 @@ export class MealsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   // @Request() req,
-  create( @Body() createMealDto: CreateMealDto) {
+  create(@Body() createMealDto: CreateMealDto) {
     try {
       // temporal hasta agregar auth
       return this.mealsService.create(createMealDto, 1)
@@ -86,7 +86,11 @@ export class MealsController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   update(@Param('id') id: string, @Body() updateMealDto: UpdateMealDto) {
-    return this.mealsService.update(+id, updateMealDto)
+    try {
+      return this.mealsService.update(+id, updateMealDto)
+    } catch (e) {
+      console.log(e)
+    }
   }
 
   @ApiOperation({ summary: 'Delete a meal' })

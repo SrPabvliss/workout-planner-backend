@@ -58,7 +58,7 @@ export class IngredientsService {
   async findAll() {
     const ingredients = await this.ingredientsRepository.find({
       where: { is_active: true },
-      relations: ['nutritionalInfo'],
+      relations: ['nutritional_info'],
     })
 
     if (!ingredients?.length) {
@@ -68,7 +68,7 @@ export class IngredientsService {
     return this.responseService.success(
       ingredients.map((ingredient) => ({
         ...ingredient,
-        nutritional_info: ingredient.nutritionalInfo,
+        nutritional_info: ingredient.nutritional_info,
       })),
       INGREDIENT_MESSAGES.FOUND_MANY,
     )
@@ -77,7 +77,7 @@ export class IngredientsService {
   async findOne(id: number) {
     const ingredient = await this.ingredientsRepository.findOne({
       where: { id, is_active: true },
-      relations: ['nutritionalInfo'],
+      relations: ['nutritional_info'],
     })
 
     if (!ingredient) {
@@ -87,7 +87,7 @@ export class IngredientsService {
     return this.responseService.success(
       {
         ...ingredient,
-        nutritional_info: ingredient.nutritionalInfo,
+        nutritional_info: ingredient.nutritional_info,
       },
       INGREDIENT_MESSAGES.FOUND,
     )

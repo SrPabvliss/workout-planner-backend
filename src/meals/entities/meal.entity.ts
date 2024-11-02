@@ -31,10 +31,10 @@ export class Meal {
   @OneToMany(() => MealIngredient, (mi) => mi.meal, {
     cascade: true,
   })
-  mealIngredients: MealIngredient[]
+  meal_ingredients: MealIngredient[]
 
   @OneToMany(() => MealCategory, (mc) => mc.meal)
-  mealCategories: MealCategory[]
+  meal_categories: MealCategory[]
 
   @CreateDateColumn()
   created_at: Date

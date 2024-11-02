@@ -15,17 +15,17 @@ export class MealIngredient {
   @PrimaryGeneratedColumn()
   id: number
 
-  @ManyToOne(() => Meal, (meal) => meal.mealIngredients, {
+  @ManyToOne(() => Meal, (meal) => meal.meal_ingredients, {
     onDelete: 'CASCADE',
   })
   meal: Meal
 
-  @ManyToOne(() => Ingredient, (ingredient) => ingredient.mealIngredients, {
+  @ManyToOne(() => Ingredient, (ingredient) => ingredient.meal_ingredients, {
     eager: true,
   })
   ingredient: Ingredient
 
-  @ManyToOne(() => Unit, (unit) => unit.mealIngredients, {
+  @ManyToOne(() => Unit, (unit) => unit.meal_ingredients, {
     eager: true,
   })
   unit: Unit

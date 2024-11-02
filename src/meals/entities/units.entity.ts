@@ -28,5 +28,5 @@ export class Unit {
   is_active: boolean
 
   @OneToMany(() => MealIngredient, (mi) => mi.unit)
-  mealIngredients: MealIngredient[]
+  meal_ingredients: MealIngredient[]
 }

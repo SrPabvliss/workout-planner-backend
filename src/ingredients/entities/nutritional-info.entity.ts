@@ -14,7 +14,7 @@ export class NutritionalInfo {
   @PrimaryGeneratedColumn()
   id: number
 
-  @OneToOne(() => Ingredient, (ingredient) => ingredient.nutritionalInfo, {
+  @OneToOne(() => Ingredient, (ingredient) => ingredient.nutritional_info, {
     onDelete: 'CASCADE',
   })
   @JoinColumn()

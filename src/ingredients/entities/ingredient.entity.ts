@@ -25,10 +25,10 @@ export class Ingredient {
   is_active: boolean
 
   @OneToMany(() => MealIngredient, (mi) => mi.ingredient)
-  mealIngredients: MealIngredient[]
+  meal_ingredients: MealIngredient[]
 
   @OneToOne(() => NutritionalInfo, (ni) => ni.ingredient, { eager: true })
-  nutritionalInfo: NutritionalInfo
+  nutritional_info: NutritionalInfo
 
   @CreateDateColumn()
   created_at: Date

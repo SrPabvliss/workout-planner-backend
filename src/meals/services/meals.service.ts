@@ -9,6 +9,8 @@ import { ResponseService } from '../../shared/response-format/response.service'
 import { IngredientsService } from '../../ingredients/ingredients.service'
 import { Unit } from '../entities/units.entity'
 import MEAL_MESSAGES from '../messages/meal-messages'
+import { MealCategory } from 'src/category/entities/meal-category.entity'
+import { Category } from 'src/category/entities/category.entity'
 
 interface NutritionalCalculation {
   calories: number
@@ -29,11 +31,14 @@ export class MealsService {
     private readonly mealIngredientsRepository: Repository<MealIngredient>,
     @InjectRepository(Unit)
     private readonly unitsRepository: Repository<Unit>,
+    @InjectRepository(MealCategory)
+    private readonly mealCategoriesRepository: Repository<MealCategory>,
     private readonly ingredientsService: IngredientsService,
     private readonly responseService: ResponseService,
   ) {}
 
   async create(createMealDto: CreateMealDto, userId: number = 1) {
+
     try {
       const meal = this.mealsRepository.create({
         name: createMealDto.name,
@@ -69,10 +74,21 @@ export class MealsService {
       )
       await this.mealIngredientsRepository.save(validMealIngredients)
 
-      return this.responseService.success(
-        await this.findOne(savedMeal.id),
-        MEAL_MESSAGES.CREATED,
-      )
+      if (createMealDto.categories?.length) {
+        const mealCategories = createMealDto.categories.map((categoryId) =>
+          this.mealCategoriesRepository.create({
+            meal: savedMeal,
+            category: { id: categoryId },
+          }),
+        )
+        await this.mealCategoriesRepository.save(mealCategories)
+      }
+
+      const created = await this.findOne(savedMeal.id)
+
+      if (!created) return
+
+      return this.responseService.success(created.data, MEAL_MESSAGES.CREATED)
     } catch (e) {
       console.log(e)
       return this.responseService.error(MEAL_MESSAGES.CREATE_ERROR)
@@ -82,9 +98,11 @@ export class MealsService {
   async findAll() {
     const meals = await this.mealsRepository.find({
       relations: [
-        'mealIngredients',
-        'mealIngredients.ingredient',
-        'mealIngredients.unit',
+        'meal_ingredients',
+        'meal_ingredients.ingredient',
+        'meal_ingredients.unit',
+        'meal_categories',
+        'meal_categories.category',
       ],
     })
 
@@ -92,16 +110,29 @@ export class MealsService {
       return this.responseService.error(MEAL_MESSAGES.MANY_NOT_FOUND)
     }
 
-    return this.responseService.success(meals, MEAL_MESSAGES.FOUND_MANY)
+    const mealsWithNutritionalInfo = await Promise.all(
+      meals.map(async (meal) => {
+        const nutritionalInfo = await this.calculateNutritionalInfo(meal)
+
+        return { ...meal, nutritional_info: nutritionalInfo }
+      }),
+    )
+
+    return this.responseService.success(
+      mealsWithNutritionalInfo,
+      MEAL_MESSAGES.FOUND_MANY,
+    )
   }
 
   async findOne(id: number) {
     const meal = await this.mealsRepository.findOne({
       where: { id },
       relations: [
-        'mealIngredients',
-        'mealIngredients.ingredient',
-        'mealIngredients.unit',
+        'meal_ingredients',
+        'meal_ingredients.ingredient',
+        'meal_ingredients.unit',
+        'meal_categories',
+        'meal_categories.category',
       ],
     })
 
@@ -112,7 +143,7 @@ export class MealsService {
     const nutritionalInfo = await this.calculateNutritionalInfo(meal)
 
     return this.responseService.success(
-      { ...meal, nutritionalInfo },
+      { ...meal, nutritional_info: nutritionalInfo },
       MEAL_MESSAGES.FOUND,
     )
   }
@@ -130,8 +161,8 @@ export class MealsService {
       sodium: 0,
     }
 
-    for (const mealIngredient of meal.mealIngredients) {
-      const { nutritionalInfo: ingredientInfo } = mealIngredient.ingredient
+    for (const mealIngredient of meal.meal_ingredients) {
+      const { nutritional_info: ingredientInfo } = mealIngredient.ingredient
       const proportion = this.calculateProportion(
         mealIngredient.quantity,
         mealIngredient.unit,
@@ -167,6 +198,7 @@ export class MealsService {
         : undefined,
     }
   }
+
   private calculateProportion(
     quantity: number,
     unit: Unit,
@@ -178,51 +210,92 @@ export class MealsService {
   }
 
   async update(id: number, updateMealDto: UpdateMealDto) {
-    const meal = await this.findOne(id)
+    try {
+      const mealResult = await this.findOne(id)
+      if (!mealResult) return
 
-    if (!meal) return
+      const originalMeal = await this.mealsRepository.findOne({
+        where: { id },
+        relations: [
+          'meal_ingredients',
+          'meal_ingredients.ingredient',
+          'meal_ingredients.unit',
+          'meal_categories',
+          'meal_categories.category',
+        ],
+      })
 
-    if (updateMealDto.name) meal.data.name = updateMealDto.name
-    if (updateMealDto.description)
-      meal.data.description = updateMealDto.description
-    if (updateMealDto.preparation)
-      meal.data.preparation = updateMealDto.preparation
+      if (!originalMeal) {
+        return this.responseService.error(MEAL_MESSAGES.NOT_FOUND)
+      }
 
-    if (updateMealDto.ingredients) {
-      await this.mealIngredientsRepository.delete({ meal: { id } })
+      const updatedMealData = {
+        ...originalMeal,
+        name: updateMealDto.name || originalMeal.name,
+        description: updateMealDto.description || originalMeal.description,
+        preparation: updateMealDto.preparation || originalMeal.preparation,
+      }
 
-      const mealIngredients = await Promise.all(
-        updateMealDto.ingredients.map(async (ingredientDto) => {
-          const ingredient = await this.ingredientsService.findOne(
-            ingredientDto.ingredient_id,
+      delete updatedMealData.meal_categories
+      delete updatedMealData.meal_ingredients
+
+      const updatedMeal = await this.mealsRepository.save(updatedMealData)
+
+      if (updateMealDto.categories) {
+        await this.mealCategoriesRepository.query(
+          `DELETE FROM meal_categories WHERE meal_id = $1`,
+          [id],
+        )
+
+        if (updateMealDto.categories.length > 0) {
+          const values = updateMealDto.categories
+            .map((categoryId) => `(${id}, ${categoryId})`)
+            .join(',')
+
+          await this.mealCategoriesRepository.query(
+            `INSERT INTO meal_categories (meal_id, category_id) VALUES ${values}`,
           )
-          const unit = await this.unitsRepository.findOneBy({
-            id: ingredientDto.unit_id,
-          })
+        }
+      }
 
-          if (!ingredient || !unit) return null
+      if (updateMealDto.ingredients) {
+        await this.mealIngredientsRepository.delete({ meal: { id } })
 
-          return this.mealIngredientsRepository.create({
-            meal: meal.data,
-            ingredient: ingredient.data,
-            unit,
-            quantity: ingredientDto.quantity,
-          })
-        }),
-      )
+        const mealIngredients = await Promise.all(
+          updateMealDto.ingredients.map(async (ingredientDto) => {
+            const ingredient = await this.ingredientsService.findOne(
+              ingredientDto.ingredient_id,
+            )
+            const unit = await this.unitsRepository.findOneBy({
+              id: ingredientDto.unit_id,
+            })
 
-      const validMealIngredients = mealIngredients.filter(
-        (mi): mi is MealIngredient => mi !== null,
-      )
-      await this.mealIngredientsRepository.save(validMealIngredients)
+            if (!ingredient || !unit) return null
+
+            return this.mealIngredientsRepository.create({
+              meal: updatedMeal,
+              ingredient: ingredient.data,
+              unit,
+              quantity: ingredientDto.quantity,
+            })
+          }),
+        )
+
+        const validMealIngredients = mealIngredients.filter(
+          (mi): mi is MealIngredient => mi !== null,
+        )
+        await this.mealIngredientsRepository.save(validMealIngredients)
+      }
+
+      const updated = await this.findOne(id)
+
+      if (!updated) return
+
+      return this.responseService.success(updated.data, MEAL_MESSAGES.UPDATED)
+    } catch (error) {
+      console.log(error)
+      return this.responseService.error(MEAL_MESSAGES.UPDATE_ERROR)
     }
-
-    const updatedMeal = await this.mealsRepository.save(meal.data)
-
-    return this.responseService.success(
-      await this.findOne(updatedMeal.id),
-      MEAL_MESSAGES.UPDATED,
-    )
   }
 
   async remove(id: number) {

@@ -9,10 +9,11 @@ import { UnitsController } from './controllers/units.controller'
 import { UnitsService } from './services/units.service'
 import { MealsService } from './services/meals.service'
 import { Unit } from './entities/units.entity'
+import { MealCategory } from 'src/category/entities/meal-category.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Meal, MealIngredient, Unit]),
+    TypeOrmModule.forFeature([Meal, MealIngredient, Unit, MealCategory]),
     IngredientsModule,
   ],
   controllers: [MealsController, UnitsController],
