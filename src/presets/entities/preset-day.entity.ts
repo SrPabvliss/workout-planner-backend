@@ -21,7 +21,7 @@ export class PresetDay {
   @JoinColumn({
     name: 'preset_id',
   })
-  preset_id: number
+  preset: Preset
 
   @Column({
     type: 'timestamp',

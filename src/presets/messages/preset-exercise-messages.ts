@@ -1,0 +1,15 @@
+export const PRESET_EXERCISE_MESSAGES = {
+  CREATED: 'Preset de ejercicios creado exitosamente',
+  UPDATED: 'Preset de ejercicios actualizado exitosamente',
+  DELETED: 'Preset de ejercicios eliminado exitosamente',
+  FOUND: 'Preset de ejercicios encontrado',
+  FOUND_MANY: 'Presets de ejercicios encontrados',
+  NOT_FOUND: 'Preset de ejercicios no encontrado',
+  MANY_NOT_FOUND: 'No se encontraron presets de ejercicios',
+  CREATE_ERROR: 'Error al crear el preset de ejercicios',
+  UPDATE_ERROR: 'Error al actualizar el preset de ejercicios',
+  DELETE_ERROR: 'Error al eliminar el preset de ejercicios',
+  FIND_ERROR: 'Error al buscar el preset de ejercicios',
+  EXERCISE_NOT_FOUND: 'Uno o más ejercicios no fueron encontrados',
+  USER_NOT_FOUND: 'Usuario no encontrado',
+}

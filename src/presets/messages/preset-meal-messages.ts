@@ -1,0 +1,15 @@
+export const PRESET_MEAL_MESSAGES = {
+  CREATED: 'Preset de comidas creado exitosamente',
+  UPDATED: 'Preset de comidas actualizado exitosamente',
+  DELETED: 'Preset de comidas eliminado exitosamente',
+  FOUND: 'Preset de comidas encontrado',
+  FOUND_MANY: 'Presets de comidas encontrados',
+  NOT_FOUND: 'Preset de comidas no encontrado',
+  MANY_NOT_FOUND: 'No se encontraron presets de comidas',
+  CREATE_ERROR: 'Error al crear el preset de comidas',
+  UPDATE_ERROR: 'Error al actualizar el preset de comidas',
+  DELETE_ERROR: 'Error al eliminar el preset de comidas',
+  FIND_ERROR: 'Error al buscar el preset de comidas',
+  MEAL_NOT_FOUND: 'Una o más comidas no fueron encontradas',
+  USER_NOT_FOUND: 'Usuario no encontrado',
+}
