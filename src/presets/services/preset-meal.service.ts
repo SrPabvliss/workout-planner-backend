@@ -7,9 +7,10 @@ import { Preset } from '../entities/preset.entity'
 import { PresetDay } from '../entities/preset-day.entity'
 import { PresetMeal } from '../entities/preset-meal.entity'
 import { Meal } from 'src/meals/entities/meal.entity'
-import { CreatePresetMealDto } from '../dto/meals/create-preset-meal.dto'
 import { PRESET_MEAL_MESSAGES } from '../messages/preset-meal-messages'
+import { CreatePresetMealDto } from '../dto/meals/create-preset-meal.dto'
 import { UpdatePresetMealDto } from '../dto/meals/update-preset-meal.dto'
+import { PresetType } from '../enums/preset-type.enum'
 
 @Injectable()
 export class PresetMealsService {
@@ -34,73 +35,99 @@ export class PresetMealsService {
         return this.responseService.error(PRESET_MEAL_MESSAGES.USER_NOT_FOUND)
       }
 
-      // 2. Crear el preset
+      // 2. Verificar existencia de todas las comidas primero
+      const mealIds = new Set(
+        createPresetMealDto.days.flatMap((day) =>
+          day.meals.map((meal) => meal.meal_id),
+        ),
+      )
+
+      const meals = await Promise.all(
+        Array.from(mealIds).map((id) => this.mealRepository.findOneBy({ id })),
+      )
+
+      if (meals.some((meal) => !meal)) {
+        const foundIds = new Set(meals.filter((m) => m).map((m) => m.id))
+        const missingIds = Array.from(mealIds).filter((id) => !foundIds.has(id))
+
+        console.error('Missing meal IDs:', missingIds)
+        return this.responseService.error(
+          `${PRESET_MEAL_MESSAGES.MEAL_NOT_FOUND}: ${missingIds.join(', ')}`,
+        )
+      }
+
+      // 3. Crear el preset
       const preset = this.presetRepository.create({
         name: createPresetMealDto.name,
         description: createPresetMealDto.description,
         created_by: userResponse.data,
+        type: PresetType.MEAL,
       })
 
       const savedPreset = await this.presetRepository.save(preset)
 
-      // 3. Procesar cada día
+      // 4. Crear días y comidas
       for (const dayDto of createPresetMealDto.days) {
-        // Verificar que todas las comidas existan antes de crear el día
-        const meals = await Promise.all(
-          dayDto.meals.map((mealDto) =>
-            this.mealRepository.findOneBy({ id: mealDto.meal_id }),
-          ),
-        )
-
-        if (meals.some((meal) => !meal)) {
-          await this.presetRepository.delete(savedPreset.id)
-          return this.responseService.error(PRESET_MEAL_MESSAGES.MEAL_NOT_FOUND)
-        }
-
-        // Crear el día
         const presetDay = this.presetDayRepository.create({
           day_of_week: dayDto.day_of_week,
           preset: savedPreset,
         })
         const savedDay = await this.presetDayRepository.save(presetDay)
 
-        // Crear las comidas del día
+        // 5. Crear las comidas del día
         await Promise.all(
-          dayDto.meals.map(async (mealDto, index) => {
+          dayDto.meals.map(async (mealDto) => {
+            const meal = meals.find((m) => m.id === mealDto.meal_id)
             const presetMeal = this.presetMealRepository.create({
               day: savedDay,
-              meal: meals[index],
+              meal: meal,
+              order: mealDto.order,
             })
             return this.presetMealRepository.save(presetMeal)
           }),
         )
       }
 
-      const createdPresetResponse = await this.findOne(savedPreset.id)
-      if (!createdPresetResponse || !createdPresetResponse.data) {
+      const result = await this.findOne(savedPreset.id)
+      if (!result || !result.data) {
+        await this.presetRepository.delete(savedPreset.id)
         return this.responseService.error(PRESET_MEAL_MESSAGES.CREATE_ERROR)
       }
 
       return this.responseService.success(
-        createdPresetResponse.data,
+        result.data,
         PRESET_MEAL_MESSAGES.CREATED,
       )
     } catch (error) {
+      console.error('Error in create:', error)
       return this.responseService.error(PRESET_MEAL_MESSAGES.CREATE_ERROR)
     }
   }
 
   async findAll() {
     try {
-      const presets = await this.presetRepository
-        .createQueryBuilder('preset')
-        .leftJoinAndSelect('preset.created_by', 'user')
-        .leftJoinAndSelect('preset.days', 'days')
-        .leftJoinAndSelect('days.meals', 'presetMeals')
-        .leftJoinAndSelect('presetMeals.meal', 'meal')
-        .orderBy('preset.created_at', 'DESC')
-        .addOrderBy('days.day_of_week', 'ASC')
-        .getMany()
+      const presets = await this.presetRepository.find({
+        relations: {
+          created_by: true,
+          days: {
+            meals: {
+              meal: true,
+            },
+          },
+        },
+        order: {
+          created_at: 'DESC',
+          days: {
+            day_of_week: 'ASC',
+            meals: {
+              order: 'ASC',
+            },
+          },
+        },
+        where: {
+          type: PresetType.MEAL,
+        },
+      })
 
       if (!presets.length) {
         return this.responseService.error(PRESET_MEAL_MESSAGES.MANY_NOT_FOUND)
@@ -111,21 +138,32 @@ export class PresetMealsService {
         PRESET_MEAL_MESSAGES.FOUND_MANY,
       )
     } catch (error) {
+      console.error('Error in findAll:', error)
       return this.responseService.error(PRESET_MEAL_MESSAGES.FIND_ERROR)
     }
   }
 
   async findOne(id: number) {
     try {
-      const preset = await this.presetRepository
-        .createQueryBuilder('preset')
-        .leftJoinAndSelect('preset.created_by', 'user')
-        .leftJoinAndSelect('preset.days', 'days')
-        .leftJoinAndSelect('days.meals', 'presetMeals')
-        .leftJoinAndSelect('presetMeals.meal', 'meal')
-        .where('preset.id = :id', { id })
-        .orderBy('days.day_of_week', 'ASC')
-        .getOne()
+      const preset = await this.presetRepository.findOne({
+        where: { id },
+        relations: {
+          created_by: true,
+          days: {
+            meals: {
+              meal: true,
+            },
+          },
+        },
+        order: {
+          days: {
+            day_of_week: 'ASC',
+            meals: {
+              order: 'ASC',
+            },
+          },
+        },
+      })
 
       if (!preset) {
         return this.responseService.error(PRESET_MEAL_MESSAGES.NOT_FOUND)
@@ -133,6 +171,7 @@ export class PresetMealsService {
 
       return this.responseService.success(preset, PRESET_MEAL_MESSAGES.FOUND)
     } catch (error) {
+      console.error('Error in findOne:', error)
       return this.responseService.error(PRESET_MEAL_MESSAGES.FIND_ERROR)
     }
   }
@@ -152,21 +191,28 @@ export class PresetMealsService {
 
       // 2. Si hay días para actualizar
       if (updatePresetMealDto.days) {
-        // Verificar comidas nuevas
-        for (const dayDto of updatePresetMealDto.days) {
-          if (dayDto.meals) {
-            const meals = await Promise.all(
-              dayDto.meals.map((mealDto) =>
-                this.mealRepository.findOneBy({ id: mealDto.meal_id }),
-              ),
-            )
+        // Verificar existencia de todas las comidas primero
+        const mealIds = new Set(
+          updatePresetMealDto.days.flatMap((day) =>
+            day.meals.map((meal) => meal.meal_id),
+          ),
+        )
 
-            if (meals.some((meal) => !meal)) {
-              return this.responseService.error(
-                PRESET_MEAL_MESSAGES.MEAL_NOT_FOUND,
-              )
-            }
-          }
+        const meals = await Promise.all(
+          Array.from(mealIds).map((id) =>
+            this.mealRepository.findOneBy({ id }),
+          ),
+        )
+
+        if (meals.some((meal) => !meal)) {
+          const foundIds = new Set(meals.filter((m) => m).map((m) => m.id))
+          const missingIds = Array.from(mealIds).filter(
+            (id) => !foundIds.has(id),
+          )
+
+          return this.responseService.error(
+            `${PRESET_MEAL_MESSAGES.MEAL_NOT_FOUND}: ${missingIds.join(', ')}`,
+          )
         }
 
         // Eliminar comidas y días actuales
@@ -197,36 +243,31 @@ export class PresetMealsService {
           })
           const savedDay = await this.presetDayRepository.save(presetDay)
 
-          if (dayDto.meals) {
-            const meals = await Promise.all(
-              dayDto.meals.map((mealDto) =>
-                this.mealRepository.findOneBy({ id: mealDto.meal_id }),
-              ),
-            )
-
-            await Promise.all(
-              dayDto.meals.map(async (mealDto, index) => {
-                const presetMeal = this.presetMealRepository.create({
-                  day: savedDay,
-                  meal: meals[index],
-                })
-                return this.presetMealRepository.save(presetMeal)
-              }),
-            )
-          }
+          await Promise.all(
+            dayDto.meals.map(async (mealDto) => {
+              const meal = meals.find((m) => m.id === mealDto.meal_id)
+              const presetMeal = this.presetMealRepository.create({
+                day: savedDay,
+                meal: meal,
+                order: mealDto.order,
+              })
+              return this.presetMealRepository.save(presetMeal)
+            }),
+          )
         }
       }
 
-      const updatedPresetResponse = await this.findOne(id)
-      if (!updatedPresetResponse || !updatedPresetResponse.data) {
+      const result = await this.findOne(id)
+      if (!result || !result.data) {
         return this.responseService.error(PRESET_MEAL_MESSAGES.UPDATE_ERROR)
       }
 
       return this.responseService.success(
-        updatedPresetResponse.data,
+        result.data,
         PRESET_MEAL_MESSAGES.UPDATED,
       )
     } catch (error) {
+      console.error('Error in update:', error)
       return this.responseService.error(PRESET_MEAL_MESSAGES.UPDATE_ERROR)
     }
   }
@@ -260,6 +301,7 @@ export class PresetMealsService {
         PRESET_MEAL_MESSAGES.DELETED,
       )
     } catch (error) {
+      console.error('Error in remove:', error)
       return this.responseService.error(PRESET_MEAL_MESSAGES.DELETE_ERROR)
     }
   }

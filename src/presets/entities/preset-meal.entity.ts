@@ -1,4 +1,10 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 import { PresetDay } from './preset-day.entity'
 import { Meal } from '../../meals/entities/meal.entity'
 
@@ -7,13 +13,16 @@ export class PresetMeal {
   @PrimaryGeneratedColumn()
   id: number
 
-  @ManyToOne(() => PresetDay, (presetDay) => presetDay.id)
+  @Column()
+  order: number
+
+  @ManyToOne(() => PresetDay, (presetDay) => presetDay.meals)
   @JoinColumn({
     name: 'day_id',
   })
   day: PresetDay
 
-  @ManyToOne(() => Meal, (meal) => meal.id)
+  @ManyToOne(() => Meal)
   @JoinColumn({
     name: 'meal_id',
   })

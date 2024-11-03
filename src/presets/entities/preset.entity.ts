@@ -10,6 +10,7 @@ import {
 } from 'typeorm'
 import { PresetDay } from './preset-day.entity'
 import { User } from '../../users/entities/user.entity'
+import { PresetType } from '../enums/preset-type.enum'
 
 @Entity('preset')
 export class Preset {
@@ -22,12 +23,6 @@ export class Preset {
   @Column()
   description: string
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({
-    name: 'created_by',
-  })
-  created_by: User
-
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
@@ -39,6 +34,19 @@ export class Preset {
   })
   updated_at: Date
 
-  @OneToMany(() => PresetDay, (presetDay) => presetDay.id)
+  @ManyToOne(() => User)
+  @JoinColumn({
+    name: 'created_by',
+  })
+  created_by: User
+
+  @OneToMany(() => PresetDay, (presetDay) => presetDay.preset)
   days: PresetDay[]
+
+  @Column({
+    type: 'enum',
+    enum: PresetType,
+    default: PresetType.MEAL,
+  })
+  type: PresetType
 }

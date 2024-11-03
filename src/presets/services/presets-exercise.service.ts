@@ -10,6 +10,7 @@ import { UsersService } from 'src/users/users.service'
 import { PresetExercise } from '../entities/preset-excercise.entity'
 import { CreatePresetExerciseDto } from '../dto/exercises/create-preset-exercise.dto'
 import { UpdatePresetExerciseDto } from '../dto/exercises/update-preset-exercise.dto'
+import { PresetType } from '../enums/preset-type.enum'
 
 @Injectable()
 export class PresetExercisesService {
@@ -30,125 +31,142 @@ export class PresetExercisesService {
     createPresetExerciseDto: CreatePresetExerciseDto,
     userId: number,
   ) {
-    try {
-      // 1. Obtener usuario
-      const userResponse = await this.usersService.findOne(userId)
-      if (!userResponse || !userResponse.data) {
-        return this.responseService.error(
-          PRESET_EXERCISE_MESSAGES.USER_NOT_FOUND,
-        )
-      }
+    // 1. Obtener usuario
+    const userResponse = await this.usersService.findOne(userId)
+    if (!userResponse || !userResponse.data) {
+      return this.responseService.error(PRESET_EXERCISE_MESSAGES.USER_NOT_FOUND)
+    }
 
-      // 2. Crear el preset
-      const preset = this.presetRepository.create({
-        name: createPresetExerciseDto.name,
-        description: createPresetExerciseDto.description,
-        created_by: userResponse.data,
+    // 2. Verificar existencia de todos los ejercicios primero
+    const exerciseIds = new Set(
+      createPresetExerciseDto.days.flatMap((day) =>
+        day.exercises.map((exercise) => exercise.exercise_id),
+      ),
+    )
+
+    const exercisesPromises = Array.from(exerciseIds).map((id) =>
+      this.exerciseRepository.findOneBy({ id }),
+    )
+
+    const exercises = await Promise.all(exercisesPromises)
+    const foundExercises = exercises.filter(
+      (exercise): exercise is Exercise => exercise !== null,
+    )
+
+    // Verificar si todos los ejercicios fueron encontrados
+    if (foundExercises.length !== exerciseIds.size) {
+      // Encontrar cuáles ejercicios no existen
+      const foundIds = new Set(foundExercises.map((exercise) => exercise.id))
+      const missingIds = Array.from(exerciseIds).filter(
+        (id) => !foundIds.has(id),
+      )
+
+      console.error('Missing exercise IDs:', missingIds)
+      return this.responseService.error(
+        `${PRESET_EXERCISE_MESSAGES.EXERCISE_NOT_FOUND}: ${missingIds.join(', ')}`,
+      )
+    }
+
+    // 3. Crear el preset
+    const preset = this.presetRepository.create({
+      name: createPresetExerciseDto.name,
+      description: createPresetExerciseDto.description,
+      created_by: userResponse.data,
+      type: PresetType.EXERCISE,
+    })
+
+    const savedPreset = await this.presetRepository.save(preset)
+
+    // 4. Crear días y ejercicios
+    for (const dayDto of createPresetExerciseDto.days) {
+      const presetDay = this.presetDayRepository.create({
+        day_of_week: dayDto.day_of_week,
+        preset: savedPreset,
+      })
+      const savedDay = await this.presetDayRepository.save(presetDay)
+
+      // 5. Crear los ejercicios del día
+      const presetExercises = dayDto.exercises.map((exerciseDto) => {
+        const exercise = foundExercises.find(
+          (e) => e.id === exerciseDto.exercise_id,
+        )
+        return this.presetExerciseRepository.create({
+          day: savedDay,
+          exercise: exercise!, // Sabemos que existe porque ya validamos
+          sets: exerciseDto.sets,
+          reps: exerciseDto.reps,
+        })
       })
 
-      const savedPreset = await this.presetRepository.save(preset)
+      await this.presetExerciseRepository.save(presetExercises)
+    }
 
-      // 3. Procesar cada día
-      for (const dayDto of createPresetExerciseDto.days) {
-        // Verificar que todos los ejercicios existan antes de crear el día
-        const exercises = await Promise.all(
-          dayDto.exercises.map((exerciseDto) =>
-            this.exerciseRepository.findOneBy({ id: exerciseDto.exercise_id }),
-          ),
-        )
-
-        if (exercises.some((exercise) => !exercise)) {
-          await this.presetRepository.delete(savedPreset.id)
-          return this.responseService.error(
-            PRESET_EXERCISE_MESSAGES.EXERCISE_NOT_FOUND,
-          )
-        }
-
-        // Crear el día
-        const presetDay = this.presetDayRepository.create({
-          day_of_week: dayDto.day_of_week,
-          preset: savedPreset,
-        })
-        const savedDay = await this.presetDayRepository.save(presetDay)
-
-        // Crear los ejercicios del día
-        await Promise.all(
-          dayDto.exercises.map(async (exerciseDto, index) => {
-            const presetExercise = this.presetExerciseRepository.create({
-              day: savedDay,
-              exercise: exercises[index],
-              sets: exerciseDto.sets,
-              reps: exerciseDto.reps,
-            })
-            return this.presetExerciseRepository.save(presetExercise)
-          }),
-        )
-      }
-
-      const createdPresetResponse = await this.findOne(savedPreset.id)
-      if (!createdPresetResponse || !createdPresetResponse.data) {
-        return this.responseService.error(PRESET_EXERCISE_MESSAGES.CREATE_ERROR)
-      }
-
-      return this.responseService.success(
-        createdPresetResponse.data,
-        PRESET_EXERCISE_MESSAGES.CREATED,
-      )
-    } catch (error) {
+    // 6. Obtener el preset completo
+    const result = await this.findOne(savedPreset.id)
+    if (!result || !result.data) {
+      await this.presetRepository.delete(savedPreset.id)
       return this.responseService.error(PRESET_EXERCISE_MESSAGES.CREATE_ERROR)
     }
+
+    return this.responseService.success(
+      result.data,
+      PRESET_EXERCISE_MESSAGES.CREATED,
+    )
   }
 
   async findAll() {
-    try {
-      const presets = await this.presetRepository
-        .createQueryBuilder('preset')
-        .leftJoinAndSelect('preset.created_by', 'user')
-        .leftJoinAndSelect('preset.days', 'days')
-        .leftJoinAndSelect('days.exercises', 'exercises')
-        .leftJoinAndSelect('exercises.exercise', 'exercise')
-        .orderBy('preset.created_at', 'DESC')
-        .addOrderBy('days.day_of_week', 'ASC')
-        .getMany()
+    const presets = await this.presetRepository.find({
+      relations: {
+        created_by: true,
+        days: {
+          exercises: {
+            exercise: true,
+          },
+        },
+      },
+      order: {
+        created_at: 'DESC',
+        days: {
+          day_of_week: 'ASC',
+          exercises: {
+            id: 'ASC',
+          },
+        },
+      },
+      where: {
+        type: PresetType.EXERCISE,
+      },
+    })
 
-      if (!presets.length) {
-        return this.responseService.error(
-          PRESET_EXERCISE_MESSAGES.MANY_NOT_FOUND,
-        )
-      }
-
-      return this.responseService.success(
-        presets,
-        PRESET_EXERCISE_MESSAGES.FOUND_MANY,
-      )
-    } catch (error) {
-      return this.responseService.error(PRESET_EXERCISE_MESSAGES.FIND_ERROR)
+    if (!presets.length) {
+      return this.responseService.error(PRESET_EXERCISE_MESSAGES.MANY_NOT_FOUND)
     }
+
+    return this.responseService.success(
+      presets,
+      PRESET_EXERCISE_MESSAGES.FOUND_MANY,
+    )
   }
 
   async findOne(id: number) {
-    try {
-      const preset = await this.presetRepository
-        .createQueryBuilder('preset')
-        .leftJoinAndSelect('preset.created_by', 'user')
-        .leftJoinAndSelect('preset.days', 'days')
-        .leftJoinAndSelect('days.exercises', 'exercises')
-        .leftJoinAndSelect('exercises.exercise', 'exercise')
-        .where('preset.id = :id', { id })
-        .orderBy('days.day_of_week', 'ASC')
-        .getOne()
+    const preset = await this.presetRepository
+      .createQueryBuilder('preset')
+      .leftJoinAndSelect('preset.created_by', 'created_by')
+      .leftJoinAndSelect('preset.days', 'days')
+      .leftJoinAndSelect('days.exercises', 'preset_exercises')
+      .leftJoinAndSelect('preset_exercises.exercise', 'exercise')
+      .where('preset.id = :id', { id })
+      .orderBy({
+        'days.day_of_week': 'ASC',
+        'preset_exercises.id': 'ASC',
+      })
+      .getOne()
 
-      if (!preset) {
-        return this.responseService.error(PRESET_EXERCISE_MESSAGES.NOT_FOUND)
-      }
-
-      return this.responseService.success(
-        preset,
-        PRESET_EXERCISE_MESSAGES.FOUND,
-      )
-    } catch (error) {
-      return this.responseService.error(PRESET_EXERCISE_MESSAGES.FIND_ERROR)
+    if (!preset) {
+      return this.responseService.error(PRESET_EXERCISE_MESSAGES.NOT_FOUND)
     }
+
+    return this.responseService.success(preset, PRESET_EXERCISE_MESSAGES.FOUND)
   }
 
   async update(id: number, updatePresetExerciseDto: UpdatePresetExerciseDto) {
@@ -164,9 +182,7 @@ export class PresetExercisesService {
         })
       }
 
-      // 2. Si hay días para actualizar
       if (updatePresetExerciseDto.days) {
-        // Verificar ejercicios nuevos
         for (const dayDto of updatePresetExerciseDto.days) {
           if (dayDto.exercises) {
             const exercises = await Promise.all(
@@ -252,35 +268,30 @@ export class PresetExercisesService {
   }
 
   async remove(id: number) {
-    try {
-      const presetResponse = await this.findOne(id)
-      if (!presetResponse || !presetResponse.data) return
+    const presetResponse = await this.findOne(id)
+    if (!presetResponse || !presetResponse.data) return
 
-      // Usar query builder para eliminar en cascada
-      await this.presetExerciseRepository
-        .createQueryBuilder()
-        .delete()
-        .from(PresetExercise)
-        .where('day_id IN (SELECT id FROM preset_day WHERE preset_id = :id)', {
-          id,
-        })
-        .execute()
+    await this.presetExerciseRepository
+      .createQueryBuilder()
+      .delete()
+      .from(PresetExercise)
+      .where('day_id IN (SELECT id FROM preset_day WHERE preset_id = :id)', {
+        id,
+      })
+      .execute()
 
-      await this.presetDayRepository
-        .createQueryBuilder()
-        .delete()
-        .from(PresetDay)
-        .where('preset_id = :id', { id })
-        .execute()
+    await this.presetDayRepository
+      .createQueryBuilder()
+      .delete()
+      .from(PresetDay)
+      .where('preset_id = :id', { id })
+      .execute()
 
-      await this.presetRepository.delete(id)
+    await this.presetRepository.delete(id)
 
-      return this.responseService.success(
-        presetResponse.data,
-        PRESET_EXERCISE_MESSAGES.DELETED,
-      )
-    } catch (error) {
-      return this.responseService.error(PRESET_EXERCISE_MESSAGES.DELETE_ERROR)
-    }
+    return this.responseService.success(
+      presetResponse.data,
+      PRESET_EXERCISE_MESSAGES.DELETED,
+    )
   }
 }

@@ -13,19 +13,19 @@ export class PresetExercise {
   @PrimaryGeneratedColumn()
   id: number
 
-  @ManyToOne(() => PresetDay, (presetDay) => presetDay.id)
-  @JoinColumn({
-    name: 'day_id',
-  })
-  day: PresetDay
-
   @Column()
   sets: number
 
   @Column()
   reps: number
 
-  @ManyToOne(() => Exercise, (exercise) => exercise.id)
+  @ManyToOne(() => PresetDay, (presetDay) => presetDay.exercises)
+  @JoinColumn({
+    name: 'day_id',
+  })
+  day: PresetDay
+
+  @ManyToOne(() => Exercise)
   @JoinColumn({
     name: 'exercise_id',
   })
