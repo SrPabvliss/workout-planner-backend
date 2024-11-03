@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { PresetsService } from './presets.service';
-import { CreatePresetDto } from './dto/create-preset.dto';
-import { UpdatePresetDto } from './dto/update-preset.dto';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common'
+import { PresetsService } from './presets.service'
+import { CreatePresetDto } from './dto/exercises/create-preset-exercise.dto'
+import { UpdatePresetDto } from './dto/exercises/update-preset-exercise.dto'
 
 @Controller('presets')
 export class PresetsController {
@@ -9,26 +17,26 @@ export class PresetsController {
 
   @Post()
   create(@Body() createPresetDto: CreatePresetDto) {
-    return this.presetsService.create(createPresetDto);
+    return this.presetsService.create(createPresetDto)
   }
 
   @Get()
   findAll() {
-    return this.presetsService.findAll();
+    return this.presetsService.findAll()
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.presetsService.findOne(+id);
+    return this.presetsService.findOne(+id)
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePresetDto: UpdatePresetDto) {
-    return this.presetsService.update(+id, updatePresetDto);
+    return this.presetsService.update(+id, updatePresetDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.presetsService.remove(+id);
+    return this.presetsService.remove(+id)
   }
 }
