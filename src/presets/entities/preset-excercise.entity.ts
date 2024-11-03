@@ -19,6 +19,9 @@ export class PresetExercise {
   @Column()
   reps: number
 
+  @Column()
+  order: number
+
   @ManyToOne(() => PresetDay, (presetDay) => presetDay.exercises)
   @JoinColumn({
     name: 'day_id',

@@ -5,6 +5,8 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm'
 import { Routine } from './routine.entity'
 import { RoutineExercise } from './routine-excercise.entity'
@@ -18,26 +20,27 @@ export class RoutineDay {
   @Column()
   day_of_week: number
 
-  @ManyToOne(() => Routine, (routine) => routine.id)
-  @JoinColumn({
-    name: 'routine_id',
-  })
-  routine_id: number
+  @Column({ type: 'date' })
+  date: Date
 
-  @Column({
+  @ManyToOne(() => Routine, (routine) => routine.days)
+  @JoinColumn({ name: 'routine_id' })
+  routine: Routine
+
+  @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date
 
-  @Column({
+  @UpdateDateColumn({
     type: 'timestamp',
   })
   updated_at: Date
 
-  @OneToMany(() => RoutineExercise, (routineExcercise) => routineExcercise.id)
+  @OneToMany(() => RoutineExercise, (routineExercise) => routineExercise.day)
   exercises: RoutineExercise[]
 
-  @OneToMany(() => RoutineMeal, (routineMeal) => routineMeal.id)
+  @OneToMany(() => RoutineMeal, (routineMeal) => routineMeal.day)
   meals: RoutineMeal[]
 }

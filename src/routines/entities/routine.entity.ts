@@ -12,6 +12,7 @@ import { User } from '../../users/entities/user.entity'
 import { RoutineDay } from './routine-day.entity'
 import { Student } from '../../students/entities/student.entity'
 import { Trainer } from '../../trainers/entities/trainer.entity'
+import { RoutineStatus, RoutineTypes } from '../enums/routine.enum'
 
 @Entity('routine')
 export class Routine {
@@ -24,35 +25,44 @@ export class Routine {
   @Column()
   description: string
 
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn({
-    name: 'created_by',
+  @Column({
+    type: 'enum',
+    enum: RoutineTypes,
+    default: RoutineTypes.EXERCISE,
   })
+  type: RoutineTypes
+
+  @Column({
+    type: 'enum',
+    enum: RoutineStatus,
+    default: RoutineStatus.DRAFT,
+  })
+  status: RoutineStatus
+
+  @Column({ type: 'date' })
+  start_date: Date
+
+  @Column({ type: 'date' })
+  end_date: Date
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
   created_by: User
 
-  @CreateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
+  @CreateDateColumn()
   created_at: Date
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-  })
+  @UpdateDateColumn()
   updated_at: Date
 
-  @OneToMany(() => RoutineDay, (routineDay) => routineDay.id)
+  @OneToMany(() => RoutineDay, (routineDay) => routineDay.routine)
   days: RoutineDay[]
 
-  @ManyToOne(() => Student, (student) => student.id)
-  @JoinColumn({
-    name: 'student_id',
-  })
+  @ManyToOne(() => Student)
+  @JoinColumn({ name: 'student_id' })
   student: Student
 
-  @ManyToOne(() => Trainer, (trainer) => trainer.id)
-  @JoinColumn({
-    name: 'trainer_id',
-  })
+  @ManyToOne(() => Trainer)
+  @JoinColumn({ name: 'trainer_id' })
   trainer: Trainer
 }

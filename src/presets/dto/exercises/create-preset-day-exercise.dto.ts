@@ -35,4 +35,16 @@ export class CreatePresetDayExerciseDto {
   @IsNumber()
   @Min(1)
   reps: number
+
+  @ApiProperty({
+    description: 'Orden del ejercicio en el día',
+    type: Number,
+    required: true,
+    minimum: 1,
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(1)
+  order: number
 }

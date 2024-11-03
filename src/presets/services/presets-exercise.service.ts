@@ -88,6 +88,7 @@ export class PresetExercisesService {
           exercise: exercise!,
           sets: exerciseDto.sets,
           reps: exerciseDto.reps,
+          order: exerciseDto.order,
         })
       })
 
@@ -234,6 +235,7 @@ export class PresetExercisesService {
                   exercise: exercises[index],
                   sets: exerciseDto.sets,
                   reps: exerciseDto.reps,
+                  order: exerciseDto.order,
                 })
                 return this.presetExerciseRepository.save(presetExercise)
               }),
