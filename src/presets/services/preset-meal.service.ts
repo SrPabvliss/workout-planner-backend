@@ -29,13 +29,11 @@ export class PresetMealsService {
 
   async create(createPresetMealDto: CreatePresetMealDto, userId: number) {
     try {
-      // 1. Obtener usuario
       const userResponse = await this.usersService.findOne(userId)
       if (!userResponse || !userResponse.data) {
         return this.responseService.error(PRESET_MEAL_MESSAGES.USER_NOT_FOUND)
       }
 
-      // 2. Verificar existencia de todas las comidas primero
       const mealIds = new Set(
         createPresetMealDto.days.flatMap((day) =>
           day.meals.map((meal) => meal.meal_id),
@@ -56,7 +54,6 @@ export class PresetMealsService {
         )
       }
 
-      // 3. Crear el preset
       const preset = this.presetRepository.create({
         name: createPresetMealDto.name,
         description: createPresetMealDto.description,
@@ -66,7 +63,6 @@ export class PresetMealsService {
 
       const savedPreset = await this.presetRepository.save(preset)
 
-      // 4. Crear días y comidas
       for (const dayDto of createPresetMealDto.days) {
         const presetDay = this.presetDayRepository.create({
           day_of_week: dayDto.day_of_week,
@@ -74,7 +70,6 @@ export class PresetMealsService {
         })
         const savedDay = await this.presetDayRepository.save(presetDay)
 
-        // 5. Crear las comidas del día
         await Promise.all(
           dayDto.meals.map(async (mealDto) => {
             const meal = meals.find((m) => m.id === mealDto.meal_id)
@@ -181,7 +176,6 @@ export class PresetMealsService {
       const presetResponse = await this.findOne(id)
       if (!presetResponse || !presetResponse.data) return
 
-      // 1. Actualizar datos básicos del preset
       if (updatePresetMealDto.name || updatePresetMealDto.description) {
         await this.presetRepository.update(id, {
           name: updatePresetMealDto.name,
@@ -189,9 +183,7 @@ export class PresetMealsService {
         })
       }
 
-      // 2. Si hay días para actualizar
       if (updatePresetMealDto.days) {
-        // Verificar existencia de todas las comidas primero
         const mealIds = new Set(
           updatePresetMealDto.days.flatMap((day) =>
             day.meals.map((meal) => meal.meal_id),
@@ -215,7 +207,6 @@ export class PresetMealsService {
           )
         }
 
-        // Eliminar comidas y días actuales
         await this.presetMealRepository
           .createQueryBuilder()
           .delete()
@@ -235,7 +226,6 @@ export class PresetMealsService {
           .where('preset_id = :id', { id })
           .execute()
 
-        // Crear nuevos días y comidas
         for (const dayDto of updatePresetMealDto.days) {
           const presetDay = this.presetDayRepository.create({
             day_of_week: dayDto.day_of_week,
@@ -277,7 +267,6 @@ export class PresetMealsService {
       const presetResponse = await this.findOne(id)
       if (!presetResponse || !presetResponse.data) return
 
-      // Usar query builder para eliminar en cascada
       await this.presetMealRepository
         .createQueryBuilder()
         .delete()

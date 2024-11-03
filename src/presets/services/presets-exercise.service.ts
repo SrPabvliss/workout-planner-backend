@@ -31,13 +31,11 @@ export class PresetExercisesService {
     createPresetExerciseDto: CreatePresetExerciseDto,
     userId: number,
   ) {
-    // 1. Obtener usuario
     const userResponse = await this.usersService.findOne(userId)
     if (!userResponse || !userResponse.data) {
       return this.responseService.error(PRESET_EXERCISE_MESSAGES.USER_NOT_FOUND)
     }
 
-    // 2. Verificar existencia de todos los ejercicios primero
     const exerciseIds = new Set(
       createPresetExerciseDto.days.flatMap((day) =>
         day.exercises.map((exercise) => exercise.exercise_id),
@@ -53,9 +51,7 @@ export class PresetExercisesService {
       (exercise): exercise is Exercise => exercise !== null,
     )
 
-    // Verificar si todos los ejercicios fueron encontrados
     if (foundExercises.length !== exerciseIds.size) {
-      // Encontrar cuáles ejercicios no existen
       const foundIds = new Set(foundExercises.map((exercise) => exercise.id))
       const missingIds = Array.from(exerciseIds).filter(
         (id) => !foundIds.has(id),
@@ -67,7 +63,6 @@ export class PresetExercisesService {
       )
     }
 
-    // 3. Crear el preset
     const preset = this.presetRepository.create({
       name: createPresetExerciseDto.name,
       description: createPresetExerciseDto.description,
@@ -77,7 +72,6 @@ export class PresetExercisesService {
 
     const savedPreset = await this.presetRepository.save(preset)
 
-    // 4. Crear días y ejercicios
     for (const dayDto of createPresetExerciseDto.days) {
       const presetDay = this.presetDayRepository.create({
         day_of_week: dayDto.day_of_week,
@@ -85,14 +79,13 @@ export class PresetExercisesService {
       })
       const savedDay = await this.presetDayRepository.save(presetDay)
 
-      // 5. Crear los ejercicios del día
       const presetExercises = dayDto.exercises.map((exerciseDto) => {
         const exercise = foundExercises.find(
           (e) => e.id === exerciseDto.exercise_id,
         )
         return this.presetExerciseRepository.create({
           day: savedDay,
-          exercise: exercise!, // Sabemos que existe porque ya validamos
+          exercise: exercise!,
           sets: exerciseDto.sets,
           reps: exerciseDto.reps,
         })
@@ -101,7 +94,6 @@ export class PresetExercisesService {
       await this.presetExerciseRepository.save(presetExercises)
     }
 
-    // 6. Obtener el preset completo
     const result = await this.findOne(savedPreset.id)
     if (!result || !result.data) {
       await this.presetRepository.delete(savedPreset.id)
@@ -174,7 +166,6 @@ export class PresetExercisesService {
       const presetResponse = await this.findOne(id)
       if (!presetResponse || !presetResponse.data) return
 
-      // 1. Actualizar datos básicos del preset
       if (updatePresetExerciseDto.name || updatePresetExerciseDto.description) {
         await this.presetRepository.update(id, {
           name: updatePresetExerciseDto.name,
@@ -201,7 +192,6 @@ export class PresetExercisesService {
           }
         }
 
-        // Eliminar ejercicios y días actuales
         await this.presetExerciseRepository
           .createQueryBuilder()
           .delete()
@@ -221,7 +211,6 @@ export class PresetExercisesService {
           .where('preset_id = :id', { id })
           .execute()
 
-        // Crear nuevos días y ejercicios
         for (const dayDto of updatePresetExerciseDto.days) {
           const presetDay = this.presetDayRepository.create({
             day_of_week: dayDto.day_of_week,
