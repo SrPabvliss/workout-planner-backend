@@ -6,6 +6,7 @@ import {
   IsString,
   IsDate,
   ValidateNested,
+  IsNumber,
 } from 'class-validator'
 import { Type } from 'class-transformer'
 import { CreateRoutineDayDto } from './create-routine-day.dto'
@@ -31,6 +32,26 @@ export class CreateRoutineExerciseDto {
   @IsNotEmpty()
   @IsString()
   description: string
+
+  @ApiProperty({
+    description: 'ID del estudiante',
+    type: Number,
+    required: true,
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  student_id: number
+
+  @ApiProperty({
+    description: 'ID del entrenador',
+    type: Number,
+    required: true,
+    example: 1,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  trainer_id: number
 
   @ApiProperty({
     description: 'Estado de la rutina',

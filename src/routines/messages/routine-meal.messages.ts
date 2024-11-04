@@ -1,0 +1,35 @@
+export const ROUTINE_MEAL_MESSAGES = {
+  CREATED: 'Rutina de alimentación creada exitosamente',
+  CREATED_FROM_PRESET:
+    'Rutina de alimentación creada exitosamente desde preset',
+  UPDATED: 'Rutina de alimentación actualizada exitosamente',
+  DELETED: 'Rutina de alimentación eliminada exitosamente',
+  FOUND: 'Rutina de alimentación encontrada',
+  FOUND_MANY: 'Rutinas de alimentación encontradas',
+  FOUND_ACTIVE: 'Rutinas de alimentación activas encontradas',
+  MEAL_CONSUMED: 'Comida marcada como consumida',
+  MEAL_UNCONSUMED: 'Comida marcada como no consumida',
+  STATUS_UPDATED: 'Estado de la rutina actualizado exitosamente',
+
+  NOT_FOUND: 'Rutina de alimentación no encontrada',
+  MANY_NOT_FOUND: 'No se encontraron rutinas de alimentación',
+  NO_ACTIVE_ROUTINES: 'No se encontraron rutinas de alimentación activas',
+  MEAL_NOT_FOUND: 'Una o más comidas no fueron encontradas',
+  PRESET_NOT_FOUND: 'Preset no encontrado',
+  STUDENT_NOT_FOUND: 'Estudiante no encontrado',
+  INVALID_DATES: 'La fecha de inicio debe ser anterior a la fecha de fin',
+  CREATE_ERROR: 'Error al crear la rutina de alimentación',
+  UPDATE_ERROR: 'Error al actualizar la rutina de alimentación',
+  DELETE_ERROR: 'Error al eliminar la rutina de alimentación',
+  FIND_ERROR: 'Error al buscar la rutina de alimentación',
+  CANNOT_UPDATE_FINISHED:
+    'No se puede actualizar una rutina completada o cancelada',
+  ROUTINE_NOT_ACTIVE: 'La rutina no está activa',
+  CANNOT_CHANGE_STATUS:
+    'No se puede cambiar el estado de una rutina completada o cancelada',
+  UNCONSUMED_MEALS: 'No se puede completar la rutina. Hay comidas sin consumir',
+  INVALID_ORDER: 'El orden de las comidas no es válido',
+  DUPLICATE_ORDER: 'Hay comidas con el mismo orden en el mismo día',
+  TRAINER_NOT_FOUND: 'Entrenador no encontrado',
+  CANNOT_UPDATE_COMPLETED: 'No se puede actualizar una comida consumida',
+}

@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsNotEmpty, IsNumber, Min, IsBoolean } from 'class-validator'
+import {
+  IsNotEmpty,
+  IsNumber,
+  Min,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator'
 
 export class CreateRoutineDayExerciseDto {
   @ApiProperty({
@@ -54,6 +60,7 @@ export class CreateRoutineDayExerciseDto {
     required: false,
     default: false,
   })
+  @IsOptional()
   @IsBoolean()
   completed?: boolean
 }
