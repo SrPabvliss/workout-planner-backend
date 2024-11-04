@@ -33,15 +33,12 @@ export class RoutineMealsService {
 
   async create(createRoutineMealDto: CreateRoutineMealDto) {
     try {
-      // Validar fechas
       if (
         new Date(createRoutineMealDto.start_date) >
         new Date(createRoutineMealDto.end_date)
       ) {
         return this.responseService.error(ROUTINE_MEAL_MESSAGES.INVALID_DATES)
       }
-
-      // Validar estudiante
 
       const studentResponse = await this.studentsService.findOne(
         createRoutineMealDto.student_id,
@@ -52,7 +49,6 @@ export class RoutineMealsService {
         )
       }
 
-      // Validar entrenador
       const trainerResponse = await this.usersService.findOne(
         createRoutineMealDto.trainer_id,
       )
@@ -62,7 +58,6 @@ export class RoutineMealsService {
         )
       }
 
-      // Validar comidas
       const mealIds = new Set(
         createRoutineMealDto.days.flatMap((day) =>
           day.meals.map((meal) => meal.meal_id),
@@ -77,7 +72,6 @@ export class RoutineMealsService {
         return this.responseService.error(ROUTINE_MEAL_MESSAGES.MEAL_NOT_FOUND)
       }
 
-      // Validar orden único por día
       for (const day of createRoutineMealDto.days) {
         const orders = day.meals.map((meal) => meal.order)
         if (new Set(orders).size !== orders.length) {
@@ -87,7 +81,6 @@ export class RoutineMealsService {
         }
       }
 
-      // Crear rutina
       const routine = this.routineRepository.create({
         ...createRoutineMealDto,
         type: RoutineTypes.MEAL,
@@ -99,7 +92,6 @@ export class RoutineMealsService {
 
       const savedRoutine = await this.routineRepository.save(routine)
 
-      // Crear días y comidas
       for (const dayDto of createRoutineMealDto.days) {
         const routineDay = this.routineDayRepository.create({
           day_of_week: dayDto.day_of_week,
@@ -137,13 +129,11 @@ export class RoutineMealsService {
     studentId: number,
     trainerId: number,
   ) {
-    // Obtener preset
     const presetResponse = await this.presetMealsService.findOne(presetId)
     if (!presetResponse || !presetResponse?.data) {
       return this.responseService.error(ROUTINE_MEAL_MESSAGES.PRESET_NOT_FOUND)
     }
 
-    // obtener estudiante con el entrenador y el user del entrenador que está anidado
     const studentResponse = await this.studentsService.findOne(studentId)
 
     console.log(studentResponse)
@@ -151,7 +141,6 @@ export class RoutineMealsService {
       return this.responseService.error(ROUTINE_MEAL_MESSAGES.STUDENT_NOT_FOUND)
     }
 
-    // Validar entrenador
     const trainerResponse = await this.usersService.findOne(trainerId)
     if (!trainerResponse || !trainerResponse?.data) {
       return this.responseService.error(ROUTINE_MEAL_MESSAGES.TRAINER_NOT_FOUND)
@@ -163,12 +152,10 @@ export class RoutineMealsService {
 
     console.log(student.trainer)
 
-    // Validar fechas
     const start = new Date(startDate)
     const end = new Date(startDate)
     end.setDate(end.getDate() + preset.days.length)
 
-    // Crear rutina
     const routine = this.routineRepository.create({
       name: preset.name,
       description: preset.description,
@@ -376,7 +363,6 @@ export class RoutineMealsService {
       )
     }
 
-    // Actualizar datos básicos si se proporcionan
     if (updateRoutineMealDto.name || updateRoutineMealDto.description) {
       await this.routineRepository.update(id, {
         name: updateRoutineMealDto.name,
@@ -384,9 +370,7 @@ export class RoutineMealsService {
       })
     }
 
-    // Actualizar días y comidas si se proporcionan
     if (updateRoutineMealDto.days) {
-      // Validar comidas
       const mealIds = new Set(
         updateRoutineMealDto.days.flatMap((day) =>
           day.meals.map((meal) => meal.meal_id),
@@ -401,7 +385,6 @@ export class RoutineMealsService {
         return this.responseService.error(ROUTINE_MEAL_MESSAGES.MEAL_NOT_FOUND)
       }
 
-      // Validar orden único por día
       for (const day of updateRoutineMealDto.days) {
         const orders = day.meals.map((meal) => meal.order)
         if (new Set(orders).size !== orders.length) {
@@ -411,7 +394,6 @@ export class RoutineMealsService {
         }
       }
 
-      // Eliminar días y comidas existentes
       await this.routineMealRepository
         .createQueryBuilder()
         .delete()
@@ -429,7 +411,6 @@ export class RoutineMealsService {
         .where('routine_id = :id', { id })
         .execute()
 
-      // Crear nuevos días y comidas
       for (const dayDto of updateRoutineMealDto.days) {
         const routineDay = this.routineDayRepository.create({
           ...dayDto,
@@ -533,7 +514,6 @@ export class RoutineMealsService {
 
       const routine = routineResponse.data
 
-      // Validar transiciones de estado
       if (
         routine.status === RoutineStatus.COMPLETED ||
         routine.status === RoutineStatus.CANCELLED
@@ -543,7 +523,6 @@ export class RoutineMealsService {
         )
       }
 
-      // Si se está completando, verificar que todas las comidas estén consumidas
       if (status === RoutineStatus.COMPLETED) {
         const hasUnconsumedMeals = routine.days.some((day) =>
           day.meals.some((meal) => !meal.consumed),
@@ -575,7 +554,6 @@ export class RoutineMealsService {
 
     const routine = routineResponse.data
 
-    // Eliminar comidas
     await this.routineMealRepository
       .createQueryBuilder()
       .delete()
@@ -585,7 +563,6 @@ export class RoutineMealsService {
       })
       .execute()
 
-    // Eliminar días
     await this.routineDayRepository
       .createQueryBuilder()
       .delete()
@@ -593,7 +570,6 @@ export class RoutineMealsService {
       .where('routine_id = :id', { id })
       .execute()
 
-    // Eliminar rutina
     await this.routineRepository.delete(id)
 
     return this.responseService.success(routine, ROUTINE_MEAL_MESSAGES.DELETED)

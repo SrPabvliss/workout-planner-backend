@@ -41,7 +41,6 @@ export class RoutineExercisesService {
       return this.responseService.error(ROUTINE_EXERCISE_MESSAGES.INVALID_DATES)
     }
 
-    // Validar estudiante
     const student = await this.studentsService.findOne(
       createRoutineExerciseDto.student_id,
     )
@@ -51,7 +50,6 @@ export class RoutineExercisesService {
       )
     }
 
-    // Validar entrenador
     const trainer = await this.trainersService.findOne(
       createRoutineExerciseDto.trainer_id,
     )
@@ -61,7 +59,6 @@ export class RoutineExercisesService {
       )
     }
 
-    // Validar ejercicios
     const exerciseIds = new Set(
       createRoutineExerciseDto.days.flatMap((day) =>
         day.exercises.map((exercise) => exercise.exercise_id),
@@ -80,7 +77,6 @@ export class RoutineExercisesService {
       )
     }
 
-    // Crear rutina con relaciones
     const routine = this.routineRepository.create({
       ...createRoutineExerciseDto,
       type: RoutineTypes.EXERCISE,
@@ -90,7 +86,6 @@ export class RoutineExercisesService {
     })
 
     const savedRoutine = await this.routineRepository.save(routine)
-    // Crear días y ejercicios
     for (const dayDto of createRoutineExerciseDto.days) {
       const routineDay = this.routineDayRepository.create({
         day_of_week: dayDto.day_of_week,
@@ -119,7 +114,6 @@ export class RoutineExercisesService {
   }
 
   async createFromPreset(presetId: number, startDate: Date, studentId: number) {
-    // Obtener preset
     const presetResponse = await this.presetExercisesService.findOne(presetId)
     if (!presetResponse || !presetResponse?.data) {
       return this.responseService.error(
@@ -127,7 +121,6 @@ export class RoutineExercisesService {
       )
     }
 
-    // Obtener estudiante
     const studentResponse = await this.studentsService.findOne(studentId)
     if (!studentResponse || !studentResponse?.data) {
       return this.responseService.error(
@@ -138,12 +131,10 @@ export class RoutineExercisesService {
     const preset = presetResponse.data
     const student = studentResponse.data
 
-    // Calcular fecha final (7 días desde inicio)
     const start = new Date(startDate)
     const end = new Date(start)
     end.setDate(end.getDate() + preset.days.length)
 
-    // Crear rutina base
     const routine = this.routineRepository.create({
       name: `${preset.name} - ${student.user.first_name}`,
       description: preset.description,
@@ -158,7 +149,6 @@ export class RoutineExercisesService {
 
     const savedRoutine = await this.routineRepository.save(routine)
 
-    // Crear días y ejercicios
     for (const presetDay of preset.days) {
       const date = new Date(start)
       date.setDate(date.getDate() + (presetDay.day_of_week - 1))
@@ -357,7 +347,6 @@ export class RoutineExercisesService {
       )
     }
 
-    // Actualizar datos básicos si se proporcionan
     if (updateRoutineExerciseDto.name || updateRoutineExerciseDto.description) {
       await this.routineRepository.update(id, {
         name: updateRoutineExerciseDto.name,
@@ -365,9 +354,7 @@ export class RoutineExercisesService {
       })
     }
 
-    // Actualizar días y ejercicios si se proporcionan
     if (updateRoutineExerciseDto.days) {
-      // Validar ejercicios
       const exerciseIds = new Set(
         updateRoutineExerciseDto.days.flatMap((day) =>
           day.exercises.map((exercise) => exercise.exercise_id),
@@ -386,7 +373,6 @@ export class RoutineExercisesService {
         )
       }
 
-      // Eliminar días y ejercicios existentes
       await this.routineExerciseRepository
         .createQueryBuilder()
         .delete()
@@ -404,7 +390,6 @@ export class RoutineExercisesService {
         .where('routine_id = :id', { id })
         .execute()
 
-      // Crear nuevos días y ejercicios
       for (const dayDto of updateRoutineExerciseDto.days) {
         const routineDay = this.routineDayRepository.create({
           ...dayDto,
@@ -552,7 +537,6 @@ export class RoutineExercisesService {
 
     const routine = routineResponse.data
 
-    // Eliminar ejercicios
     await this.routineExerciseRepository
       .createQueryBuilder()
       .delete()
@@ -562,7 +546,6 @@ export class RoutineExercisesService {
       })
       .execute()
 
-    // Eliminar días
     await this.routineDayRepository
       .createQueryBuilder()
       .delete()
@@ -570,7 +553,6 @@ export class RoutineExercisesService {
       .where('routine_id = :id', { id })
       .execute()
 
-    // Eliminar rutina
     await this.routineRepository.delete(id)
 
     return this.responseService.success(
